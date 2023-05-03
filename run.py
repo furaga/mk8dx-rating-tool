@@ -9,9 +9,11 @@ import mk8dx_digit_ocr
 from utils import OBS, RaceAnalyzer
 
 
-game_screen_roi = [0, 0, 1655 / 1920, 929 / 1080]
-race_type_roi = [0.16, 0.85, 0.24, (0.85 + 0.98) / 2]  # 上半分を使用
-course_roi = [0.72, 0.85, 0.84, 0.98]
+# race_type_roi = [0.16, 0.85, 0.24, (0.85 + 0.98) / 2]  # 上半分を使用
+# course_roi = [0.72, 0.85, 0.84, 0.98]
+
+race_type_roi = [0.16, 0.85, 0.24, 0.98]
+course_roi = [0.73, 0.87, 0.82, 0.96]
 
 players_roi_base = [
     93 / 1920,
@@ -48,8 +50,8 @@ def parse_args():
     parser.add_argument("--video_path", type=Path, default=None)
     parser.add_argument("--out_csv_path", type=Path, required=True)
     parser.add_argument("--imshow", action="store_true")
-    parser.add_argument("--max_my_rate", type=int, default=30000)
-    parser.add_argument("--min_my_rate", type=int, default=20000)
+    parser.add_argument("--max_my_rate", type=int, default=40000)
+    parser.add_argument("--min_my_rate", type=int, default=30000)
     args = parser.parse_args()
     return args
 
@@ -105,13 +107,53 @@ def detect_rates(img):
     return rates
 
 
+_cnt = 10000
+course_dict = {}
+race_type_dict = {}
+
+
+def imread_safe(filename, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
+    try:
+        n = np.fromfile(filename, dtype)
+        img = cv2.imdecode(n, flags)
+        return img
+    except Exception as e:
+        print(e)
+        return None
+
+
+def detect_course(img):
+    print("XXXX")
+    global _cnt
+    # save
+    course_img = crop_img(img, course_roi)
+    racetype_img = crop_img(img, race_type_roi)
+    cv2.imwrite(f"data/tmp/courses/{_cnt:05d}.png", course_img)
+    cv2.imwrite(f"data/tmp/race_type/{_cnt:05d}.png", racetype_img)
+    _cnt += 1
+
+    if len(course_dict) <= 0:
+        for d in Path("data/courses").glob("*"):
+            for img_path in d.glob("*.png"):
+                img = imread_safe(str(img_path))
+                course_dict.setdefault(d.stem, []).append(img)
+                print(img_path, img.shape)
+
+    if len(race_type_dict) <= 0:
+        for d in Path("data/race_type").glob("*"):
+            for img_path in d.glob("*.png"):
+                img = imread_safe(str(img_path))
+                race_type_dict.setdefault(d.stem, []).append(img)
+                print(img_path, img.shape)
+
+
 def detect_final_rates(img):
     inv_img = 255 - cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     num = 0
     for i, roi in enumerate(result_rates_rois):
         crop = crop_img(inv_img, roi)
         # cv2.imshow(f"roi{i}", crop)
-        ret, rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(crop)
+        ret, rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(crop) #, verbose=True)
         if ret and min_my_rate <= rate <= max_my_rate:
             return True, rate
 
@@ -127,6 +169,7 @@ def parse_frame(img, ts, status):
         is_pre_race = is_pre_race_screen(img)
         if is_pre_race:
             rates = detect_rates(img)
+            detect_course(img)
             history[-1].update({"rates": rates})
             return "race", RaceInfo(rates_start=rates)
 
@@ -186,7 +229,7 @@ def main(args):
     cap = cv2.VideoCapture(str(args.video_path))
 
     status = "race"
-    ts = 200 * 1000
+    ts = 360 * 1000
     while True:
         ts += 500
         cap.set(cv2.CAP_PROP_POS_MSEC, ts)

@@ -5,7 +5,7 @@ from utils import OBS
 
 def get_black_ratio(img):
     h, w = img.shape[:2]
-    thr = 25
+    thr = 32
     black = cv2.inRange(img, (0, 0, 0), (thr, thr, thr))
     br = cv2.countNonZero(black) / (h * w)
     return br
