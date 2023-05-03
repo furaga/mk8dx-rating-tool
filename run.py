@@ -304,10 +304,10 @@ def main(args):
         next_status, race_info = parse_frame(frame, 0, status, race_info)
         if next_status != status:
             if next_status == "none":
-                print(race_info)
                 save_race_info(
                     args.out_csv_path, str(args.video_path) + "@" + str(ts), race_info
                 )
+                print("Saved Race Information.")
                 race_info = RaceInfo()
 
             if next_status != "":
