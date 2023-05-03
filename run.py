@@ -9,8 +9,8 @@ import mk8dx_digit_ocr
 from utils import OBS, RaceAnalyzer
 
 
-# race_type_roi = [0.16, 0.85, 0.24, (0.85 + 0.98) / 2]  # 上半分を使用
-# course_roi = [0.72, 0.85, 0.84, 0.98]
+race_type_roi = [0.16, 0.85, 0.24, (0.85 + 0.98) / 2]  # 上半分を使用
+course_roi = [0.72, 0.85, 0.84, 0.98]
 
 race_type_roi = [0.16, 0.85, 0.24, 0.98]
 course_roi = [0.73, 0.87, 0.82, 0.96]
@@ -33,12 +33,26 @@ result_rates_rois = [
 ]
 
 
-class RaceInfo(NamedTuple):
-    cource: str = ""
-    race_type: str = "150cc"
-    place: str = 0
-    rates_start: List[int] = [0 for _ in range(12)]
-    rates_end: List[int] = [0 for _ in range(12)]
+class RaceInfo:
+    def __init__(self):
+        self.course: str = ""
+        self.race_type: str = ""
+        self.place: int = 0
+        self.rates: List[int] = [0 for _ in range(12)]
+        self.my_rate: int = 0
+
+    def __repr__(self) -> str:
+        return (
+            self.course
+            + ","
+            + self.race_type
+            + ","
+            + str(self.place)
+            + ","
+            + str(self.my_rate)
+            + " | "
+            + ",".join([str(r) for r in self.rates])
+        )
 
 
 cap = None
@@ -121,9 +135,11 @@ def imread_safe(filename, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
         print(e)
         return None
 
+
 def imwrite_safe(filename, img, params=None):
     try:
         import os
+
         ext = os.path.splitext(filename)[1]
         result, n = cv2.imencode(ext, img, params)
 
@@ -187,6 +203,8 @@ def detect_course(img):
     imwrite_safe(f"data/tmp/race_type/{best_course}_{_cnt:05d}.png", race_type_img)
     _cnt += 1
 
+    return best_course, best_race_type
+
 
 def detect_final_rates(img):
     inv_img = 255 - cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -198,12 +216,12 @@ def detect_final_rates(img):
             crop
         )  # , verbose=True)
         if ret and min_my_rate <= rate <= max_my_rate:
-            return True, rate
+            return True, rate, i + 1
 
-    return False, 0
+    return False, 0, 0
 
 
-def parse_frame(img, ts, status):
+def parse_frame(img, ts, status, race_info):
     history.append({"ts": ts, "status": status})
     while len(history) > 10:
         history.pop(0)
@@ -214,49 +232,50 @@ def parse_frame(img, ts, status):
             rates = detect_rates(img)
             if len([x for x in rates if x > 0]) >= 3:
                 history[-1].update({"rates": rates})
-                detect_course(img)
-                return "race", RaceInfo(rates_start=rates)
+                race_info.rates = rates
+                course, race_type = detect_course(img)
+                race_info.course = course
+                race_info.race_type = race_type
+                return "race", race_info
 
     if status == "race":
-        ret, next_rate = detect_final_rates(img)
+        ret, my_rate, place = detect_final_rates(img)
         if ret:
-            history[-1].update({"next_rate": next_rate})
-            return "result", RaceInfo()
+            history[-1].update({"my_rate": my_rate})
+            race_info.my_rate = my_rate
+            race_info.place = place
+            return "result", race_info
 
     if status == "result":
-        ret, next_rate = detect_final_rates(img)
+        ret, my_rate, place = detect_final_rates(img)
         if ret:
-            history[-1].update({"next_rate": next_rate})
-            return "", RaceInfo()
+            history[-1].update({"my_rate": my_rate})
+            race_info.my_rate = my_rate
+            race_info.place = place
+            return "", race_info
         else:
-            print("next_rate =", history[-2]["next_rate"])
-            return "none", RaceInfo()
+            print("my_rate =", history[-2]["my_rate"])
+            return "none", race_info
 
-    return "", RaceInfo()
+    return "", race_info
 
 
-def save_race_info(out_csv_path, race_info):
-    header = ["video_path", "time", "cource", "race_type", "place"]
-    header += [f"rate_start_{i}" for i in range(12)]
-    header += [f"rates_end_{i}" for i in range(12)]
+def save_race_info(out_csv_path, ts, race_info):
+    header = ["ts", "course", "race_type", "place", "my_rate"]
+    header += [f"rates_{i}" for i in range(12)]
 
     if not out_csv_path.exists():
-        with open(out_csv_path, "w") as f:
+        with open(out_csv_path, "w", encoding="sjis") as f:
             f.write(",".join(header) + "\n")
 
-    with open(out_csv_path, "a") as f:
-        f.write(race_info.cource + ",")
+    with open(out_csv_path, "a", encoding="sjis") as f:
+        f.write(str(ts) + ",")
+        f.write(race_info.course + ",")
         f.write(race_info.race_type + ",")
-        f.write(race_info.place + ",")
-        f.write(",".join([r for r in race_info.rates_start]) + ",")
-        f.write(",".join([r for r in race_info.rates_end]) + "\n")
+        f.write(str(race_info.place) + ",")
+        f.write(str(race_info.my_rate) + ",")
+        f.write(",".join([str(r) for r in race_info.rates]) + "\n")
         f.flush()
-
-    rows = []
-
-    df = pd.DataFrame(rows)
-    df.to_csv(out_csv_path, header=header, index=False, encoding="utf-8")
-    pass
 
 
 min_my_rate, max_my_rate = 0, 100000
@@ -272,8 +291,9 @@ def main(args):
 
     cap = cv2.VideoCapture(str(args.video_path))
 
-    status = "race"
+    status = "none"
     ts = 0
+    race_info = RaceInfo()
     while True:
         ts += 500
         cap.set(cv2.CAP_PROP_POS_MSEC, ts)
@@ -281,11 +301,15 @@ def main(args):
         if not ret:
             break
 
-        next_status, race_info = parse_frame(frame, 0, status)
+        next_status, race_info = parse_frame(frame, 0, status, race_info)
         if next_status != status:
-            # if status == "race":
-            # レース終了
-            #     save_race_info(args.out_csv_path, race_info)
+            if next_status == "none":
+                print(race_info)
+                save_race_info(
+                    args.out_csv_path, str(args.video_path) + "@" + str(ts), race_info
+                )
+                race_info = RaceInfo()
+
             if next_status != "":
                 status = next_status
                 if next_status == "race":
