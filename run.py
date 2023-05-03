@@ -313,7 +313,7 @@ def main(args):
             if next_status != "":
                 status = next_status
                 if next_status == "race":
-                    ts += 120 * 1000
+                    ts += 100 * 1000
 
         cv2.imshow("frame", frame)
         # if cv2.waitKey(0 if history[-1]["is_pre_race"] else 1) == ord("q"):
