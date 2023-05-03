@@ -121,30 +121,71 @@ def imread_safe(filename, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
         print(e)
         return None
 
+def imwrite_safe(filename, img, params=None):
+    try:
+        import os
+        ext = os.path.splitext(filename)[1]
+        result, n = cv2.imencode(ext, img, params)
+
+        if result:
+            with open(filename, mode="w+b") as f:
+                n.tofile(f)
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
+
 
 def detect_course(img):
-    print("XXXX")
     global _cnt
-    # save
-    course_img = crop_img(img, course_roi)
-    racetype_img = crop_img(img, race_type_roi)
-    cv2.imwrite(f"data/tmp/courses/{_cnt:05d}.png", course_img)
-    cv2.imwrite(f"data/tmp/race_type/{_cnt:05d}.png", racetype_img)
-    _cnt += 1
 
+    # 初回ならデータ読み込む
     if len(course_dict) <= 0:
         for d in Path("data/courses").glob("*"):
             for img_path in d.glob("*.png"):
-                img = imread_safe(str(img_path))
-                course_dict.setdefault(d.stem, []).append(img)
-                print(img_path, img.shape)
+                tmpl = imread_safe(str(img_path))
+                tmpl = cv2.resize(tmpl, (173, 97))
+                course_dict.setdefault(d.stem, []).append(tmpl)
 
     if len(race_type_dict) <= 0:
         for d in Path("data/race_type").glob("*"):
             for img_path in d.glob("*.png"):
-                img = imread_safe(str(img_path))
-                race_type_dict.setdefault(d.stem, []).append(img)
-                print(img_path, img.shape)
+                tmpl = imread_safe(str(img_path))
+                tmpl = cv2.resize(tmpl, (103, 93))
+                race_type_dict.setdefault(d.stem, []).append(tmpl)
+
+    best_score = 0
+    best_course = ""
+    course_img = crop_img(img, course_roi)
+    course_img = cv2.resize(course_img, (173, 97))
+    for k, v in course_dict.items():
+        for i, template in enumerate(v):
+            result = cv2.matchTemplate(course_img, template, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, _ = cv2.minMaxLoc(result)
+            if best_score < max_val:
+                best_score = max_val
+                best_course = k
+    print(best_course, "| score =", best_score)
+
+    best_score = 0
+    best_race_type = ""
+    race_type_img = crop_img(img, race_type_roi)
+    race_type_img = cv2.resize(race_type_img, (103, 93))
+    for k, v in race_type_dict.items():
+        for i, template in enumerate(v):
+            result = cv2.matchTemplate(race_type_img, template, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, _ = cv2.minMaxLoc(result)
+            if best_score < max_val:
+                best_score = max_val
+                best_race_type = k
+    print(best_race_type, "| score =", best_score)
+
+    # save
+    imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
+    imwrite_safe(f"data/tmp/race_type/{best_course}_{_cnt:05d}.png", race_type_img)
+    _cnt += 1
 
 
 def detect_final_rates(img):
@@ -153,7 +194,9 @@ def detect_final_rates(img):
     for i, roi in enumerate(result_rates_rois):
         crop = crop_img(inv_img, roi)
         # cv2.imshow(f"roi{i}", crop)
-        ret, rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(crop) #, verbose=True)
+        ret, rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
+            crop
+        )  # , verbose=True)
         if ret and min_my_rate <= rate <= max_my_rate:
             return True, rate
 
@@ -169,9 +212,10 @@ def parse_frame(img, ts, status):
         is_pre_race = is_pre_race_screen(img)
         if is_pre_race:
             rates = detect_rates(img)
-            detect_course(img)
-            history[-1].update({"rates": rates})
-            return "race", RaceInfo(rates_start=rates)
+            if len([x for x in rates if x > 0]) >= 3:
+                history[-1].update({"rates": rates})
+                detect_course(img)
+                return "race", RaceInfo(rates_start=rates)
 
     if status == "race":
         ret, next_rate = detect_final_rates(img)
@@ -229,7 +273,7 @@ def main(args):
     cap = cv2.VideoCapture(str(args.video_path))
 
     status = "race"
-    ts = 360 * 1000
+    ts = 0
     while True:
         ts += 500
         cap.set(cv2.CAP_PROP_POS_MSEC, ts)
@@ -244,6 +288,8 @@ def main(args):
             #     save_race_info(args.out_csv_path, race_info)
             if next_status != "":
                 status = next_status
+                if next_status == "race":
+                    ts += 120 * 1000
 
         cv2.imshow("frame", frame)
         # if cv2.waitKey(0 if history[-1]["is_pre_race"] else 1) == ord("q"):
