@@ -235,7 +235,8 @@ def parse_frame(img, ts, status, race_info):
             course, race_type = detect_course(img)
             race_info.course = course
             race_info.race_type = race_type
-            OBS.set_text("コース情報", f"{course}, {race_type}")
+            if enable_OBS:
+                OBS.set_text("コース情報", f"{course}, {race_type}")
             return "race", race_info
 
     if status == "race":
@@ -244,9 +245,10 @@ def parse_frame(img, ts, status, race_info):
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
-            OBS.set_text(
-                "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
-            )
+            if enable_OBS:
+                OBS.set_text(
+                    "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
+                )
             return "result", race_info
 
     if status == "result":
@@ -255,9 +257,10 @@ def parse_frame(img, ts, status, race_info):
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
-            OBS.set_text(
-                "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
-            )
+            if enable_OBS:
+                OBS.set_text(
+                    "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
+                )
             return "", race_info
         else:
             return "none", race_info
@@ -274,26 +277,32 @@ def save_race_info(out_csv_path, ts, race_info):
             f.write(",".join(header) + "\n")
 
     with open(out_csv_path, "a", encoding="sjis") as f:
-        f.write(str(ts) + ",")
-        f.write(race_info.course + ",")
-        f.write(race_info.race_type + ",")
-        f.write(str(race_info.place) + ",")
-        f.write(str(race_info.my_rate) + ",")
-        f.write(",".join([str(r) for r in race_info.rates]) + "\n")
+        text = str(ts) + ","
+        text += race_info.course + ","
+        text += race_info.race_type + ","
+        text += str(race_info.place) + ","
+        text += str(race_info.my_rate) + ","
+        text += ",".join([str(r) for r in race_info.rates]) + "\n"
+        print(text.strip(), flush=True)
+        f.write(text)
         f.flush()
 
 
 min_my_rate, max_my_rate = 0, 100000
+enable_OBS = False
 
 
 def main(args):
-    global min_my_rate, max_my_rate
+    global min_my_rate, max_my_rate, enable_OBS
     min_my_rate = args.min_my_rate
     max_my_rate = args.max_my_rate
 
     if len(args.obs_pass) > 0:
+        print("OBS Mode")
+        enable_OBS = True
         OBS.init(args.obs_pass)
     else:
+        print("Video Mode:", str(args.video_path))
         cap = cv2.VideoCapture(str(args.video_path))
 
     status = "none"
@@ -308,14 +317,16 @@ def main(args):
     ts_str = ""
     while True:
         if browser_visible and time.time() - browser_show_time > 10:
-            OBS.set_visible("ブラウザ_レート遷移", False)
+            if enable_OBS:
+                OBS.set_visible("ブラウザ_レート遷移", False)
             browser_visible = False
 
-        if len(args.obs_pass) > 0:
+        if enable_OBS:
             frame = OBS.capture_game_screen()
             import datetime
+
             now = datetime.datetime.now()
-            ts_str = now.strftime('%Y-%m-%d %H:%M:%S')
+            ts_str = now.strftime("%Y-%m-%d %H:%M:%S")
         else:
             ts += 500
             ts_str = str(args.video_path) + "@" + str(ts)
@@ -327,13 +338,11 @@ def main(args):
         next_status, race_info = parse_frame(frame, 0, status, race_info)
         if next_status != status:
             if next_status == "none":
-                save_race_info(
-                    args.out_csv_path, ts_str, race_info
-                )
-                OBS.set_visible("ブラウザ_レート遷移", True)
+                save_race_info(args.out_csv_path, ts_str, race_info)
+                if enable_OBS:
+                    OBS.set_visible("ブラウザ_レート遷移", True)
                 browser_visible = True
                 browser_show_time = time.time()
-                print("Saved Race Information.")
                 race_info = RaceInfo()
 
             if next_status != "":
@@ -346,7 +355,7 @@ def main(args):
         if cv2.waitKey(1) == ord("q"):
             break
 
-        if len(args.obs_pass) > 0:
+        if enable_OBS:
             time_to_sleep = 100 - int((time.time() - since) * 1000)
             if time_to_sleep > 0:
                 time.sleep(time_to_sleep / 1000)
