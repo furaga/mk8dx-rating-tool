@@ -1,28 +1,3 @@
-# import plotly.graph_objects as go
-
-# import time
-
-# with open("out.csv", "r", encoding="sjis") as f:
-#     lines = f.readlines()
-#     my_rates = [int(line.split(",")[3]) for line in lines[1:]]
-#     x =  [i for i in range(len(my_rates))]
-
-# fig = go.Figure()
-# fig.add_trace(go.Scatter(x=x, y=my_rates, mode='lines+markers', name='Line 1'))
-# fig.update_layout(title='Interactive Line Plot', xaxis_title='X-axis', yaxis_title='Y-axis')
-# fig.show()
-
-# while True:
-#     with open("out.csv", "r", encoding="sjis") as f:
-#         lines = f.readlines()
-#         my_rates = [int(line.split(",")[4]) * 1.01 for line in lines[1:]]
-#         x =  [i for i in range(len(my_rates))]
-
-#     fig.update_traces(go.Scatter(x=x, y=my_rates, mode='lines+markers', name='Line 1'))
-#     fig.update_layout(title='Interactive Line Plot', xaxis_title='X-axis', yaxis_title='Y-axis')
-#     print("update")
-#     time.sleep(5)
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -65,15 +40,35 @@ app.layout = html.Div(
 def update_graph(n_intervals):
     # update_tracesを使用してマーカーカラーを変更
     with open("out.csv", "r", encoding="sjis") as f:
-        lines = f.readlines()
-        my_rates = [int(line.split(",")[4]) for line in lines[1:]][:n]
+        lines = f.readlines()[1:]
+        my_rates = [int(line.split(",")[4]) for line in lines]
+        start_days = [0]
+        for i in range(len(lines) - 1):
+            if lines[i + 1].split(",")[0].split('@')[0] != lines[i].split(",")[0].split('@')[0]:
+                start_days.append(i + 1)
         x = [i for i in range(len(my_rates))]
 
     updated_trace = go.Scatter(x=x, y=my_rates, mode="lines+markers", name="Line 1")
 
     # グラフに反映させる
-    return go.Figure(data=[updated_trace])
+    fig = go.Figure(data=[updated_trace])
 
+    # x=10の赤色の縦線を追加
+    fig.update_layout(
+        shapes=[
+            dict(
+                type="line",
+                x0=x,
+                x1=x,
+                y0=0,
+                y1=1,
+                yref="paper",
+                line=dict(color="red"),
+            ) for x in start_days
+        ]
+    )
+
+    return fig
 
 # アプリケーションを実行
 if __name__ == "__main__":

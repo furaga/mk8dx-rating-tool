@@ -216,6 +216,7 @@ def detect_final_rates(img):
             crop
         )  # , verbose=True)
         if ret and min_my_rate <= rate <= max_my_rate:
+            imwrite_safe(f"rate_{_cnt:05d}.png", crop)
             return True, rate, i + 1
 
     return False, 0, 0
@@ -226,17 +227,16 @@ def parse_frame(img, ts, status, race_info):
     while len(history) > 10:
         history.pop(0)
 
-    if status == "none":
-        is_pre_race = is_pre_race_screen(img)
-        if is_pre_race:
-            rates = detect_rates(img)
-            if len([x for x in rates if x > 0]) >= 3:
-                history[-1].update({"rates": rates})
-                race_info.rates = rates
-                course, race_type = detect_course(img)
-                race_info.course = course
-                race_info.race_type = race_type
-                return "race", race_info
+    is_pre_race = is_pre_race_screen(img)
+    if is_pre_race:
+        rates = detect_rates(img)
+        if len([x for x in rates if x > 0]) >= 3:
+            history[-1].update({"rates": rates})
+            race_info.rates = rates
+            course, race_type = detect_course(img)
+            race_info.course = course
+            race_info.race_type = race_type
+            return "race", race_info
 
     if status == "race":
         ret, my_rate, place = detect_final_rates(img)
@@ -288,18 +288,25 @@ def main(args):
 
     if len(args.obs_pass) > 0:
         OBS.init(args.obs_pass)
-
-    cap = cv2.VideoCapture(str(args.video_path))
+    else:
+        cap = cv2.VideoCapture(str(args.video_path))
 
     status = "none"
     ts = 0
     race_info = RaceInfo()
+    import time
+    since1 = time.time()
+    since = time.time()
     while True:
-        ts += 500
-        cap.set(cv2.CAP_PROP_POS_MSEC, ts)
-        ret, frame = cap.read()
-        if not ret:
-            break
+        if len(args.obs_pass) > 0:
+            ts = int((time.time() - since1) * 1000)
+            frame = OBS.capture_game_screen()
+        else:
+            ts += 500
+            cap.set(cv2.CAP_PROP_POS_MSEC, ts)
+            ret, frame = cap.read()
+            if not ret:
+                break
 
         next_status, race_info = parse_frame(frame, 0, status, race_info)
         if next_status != status:
@@ -319,6 +326,14 @@ def main(args):
         # if cv2.waitKey(0 if history[-1]["is_pre_race"] else 1) == ord("q"):
         if cv2.waitKey(1) == ord("q"):
             break
+
+        if len(args.obs_pass) > 0:
+            time_to_sleep = 100 - int((time.time() - since) * 1000)
+            if time_to_sleep > 0:
+                time.sleep(time_to_sleep / 1000)
+            since = time.time()
+          #  print("xxx")
+
 
 
 if __name__ == "__main__":
