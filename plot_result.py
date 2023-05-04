@@ -40,7 +40,7 @@ app.layout = html.Div(
 def update_graph(n_intervals):
     # update_tracesを使用してマーカーカラーを変更
     with open("out.csv", "r", encoding="sjis") as f:
-        lines = f.readlines()[1:][-50:]
+        lines = f.readlines()[1:][-40:]
         my_rates = [int(line.split(",")[4]) for line in lines]
         x = [i for i in range(len(my_rates))]
 

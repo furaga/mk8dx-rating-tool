@@ -183,7 +183,7 @@ def detect_course(img):
             if best_score < max_val:
                 best_score = max_val
                 best_course = k
-    print(best_course, "| score =", best_score)
+    # print(best_course, "| score =", best_score)
 
     best_score = 0
     best_race_type = ""
@@ -196,7 +196,6 @@ def detect_course(img):
             if best_score < max_val:
                 best_score = max_val
                 best_race_type = k
-    print(best_race_type, "| score =", best_score)
 
     # save
     imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
@@ -236,6 +235,7 @@ def parse_frame(img, ts, status, race_info):
             course, race_type = detect_course(img)
             race_info.course = course
             race_info.race_type = race_type
+            OBS.set_text("コース情報", f"{course}, {race_type}")
             return "race", race_info
 
     if status == "race":
@@ -244,6 +244,9 @@ def parse_frame(img, ts, status, race_info):
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
+            OBS.set_text(
+                "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
+            )
             return "result", race_info
 
     if status == "result":
@@ -252,9 +255,11 @@ def parse_frame(img, ts, status, race_info):
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
+            OBS.set_text(
+                "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
+            )
             return "", race_info
         else:
-            print("my_rate =", history[-2]["my_rate"])
             return "none", race_info
 
     return "", race_info
@@ -300,16 +305,20 @@ def main(args):
     since = time.time()
     browser_show_time = -10000
     browser_visible = True
+    ts_str = ""
     while True:
         if browser_visible and time.time() - browser_show_time > 10:
             OBS.set_visible("ブラウザ_レート遷移", False)
             browser_visible = False
 
         if len(args.obs_pass) > 0:
-            ts = int((time.time() - since1) * 1000)
             frame = OBS.capture_game_screen()
+            import datetime
+            now = datetime.datetime.now()
+            ts_str = now.strftime('%Y-%m-%d %H:%M:%S')
         else:
             ts += 500
+            ts_str = str(args.video_path) + "@" + str(ts)
             cap.set(cv2.CAP_PROP_POS_MSEC, ts)
             ret, frame = cap.read()
             if not ret:
@@ -319,7 +328,7 @@ def main(args):
         if next_status != status:
             if next_status == "none":
                 save_race_info(
-                    args.out_csv_path, str(args.video_path) + "@" + str(ts), race_info
+                    args.out_csv_path, ts_str, race_info
                 )
                 OBS.set_visible("ブラウザ_レート遷移", True)
                 browser_visible = True
