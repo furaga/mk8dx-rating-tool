@@ -2,3 +2,5 @@ git+https://github.com/furaga/mk8dx-digit-ocr.git
 obs-websocket-py
 black
 pandas
+plotly
+dash
