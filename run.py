@@ -273,10 +273,10 @@ def save_race_info(out_csv_path, ts, race_info):
     header += [f"rates_{i}" for i in range(12)]
 
     if not out_csv_path.exists():
-        with open(out_csv_path, "w", encoding="sjis") as f:
+        with open(out_csv_path, "w", encoding="utf8") as f:
             f.write(",".join(header) + "\n")
 
-    with open(out_csv_path, "a", encoding="sjis") as f:
+    with open(out_csv_path, "a", encoding="utf8") as f:
         text = str(ts) + ","
         text += race_info.course + ","
         text += race_info.race_type + ","
