@@ -295,9 +295,16 @@ def main(args):
     ts = 0
     race_info = RaceInfo()
     import time
+
     since1 = time.time()
     since = time.time()
+    browser_show_time = -10000
+    browser_visible = True
     while True:
+        if browser_visible and time.time() - browser_show_time > 10:
+            OBS.set_visible("ブラウザ_レート遷移", False)
+            browser_visible = False
+
         if len(args.obs_pass) > 0:
             ts = int((time.time() - since1) * 1000)
             frame = OBS.capture_game_screen()
@@ -314,6 +321,9 @@ def main(args):
                 save_race_info(
                     args.out_csv_path, str(args.video_path) + "@" + str(ts), race_info
                 )
+                OBS.set_visible("ブラウザ_レート遷移", True)
+                browser_visible = True
+                browser_show_time = time.time()
                 print("Saved Race Information.")
                 race_info = RaceInfo()
 
@@ -332,8 +342,7 @@ def main(args):
             if time_to_sleep > 0:
                 time.sleep(time_to_sleep / 1000)
             since = time.time()
-          #  print("xxx")
-
+        #  print("xxx")
 
 
 if __name__ == "__main__":

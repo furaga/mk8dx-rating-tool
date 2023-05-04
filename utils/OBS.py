@@ -25,12 +25,12 @@ def set_browser_url(source_name: str, url: str):
 
 
 def set_visible(source_name: str, visible: bool):
-    print(obs_ws_.call(
+    obs_ws_.call(
         obswebsocket.requests.SetSceneItemProperties(
             item=source_name,
             visible=visible
         )
-    ))
+    )
 
 
 def set_text(source_name: str, new_text: str):

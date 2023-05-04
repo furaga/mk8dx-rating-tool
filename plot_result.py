@@ -40,35 +40,47 @@ app.layout = html.Div(
 def update_graph(n_intervals):
     # update_tracesを使用してマーカーカラーを変更
     with open("out.csv", "r", encoding="sjis") as f:
-        lines = f.readlines()[1:]
+        lines = f.readlines()[1:][-50:]
         my_rates = [int(line.split(",")[4]) for line in lines]
-        start_days = [0]
-        for i in range(len(lines) - 1):
-            if lines[i + 1].split(",")[0].split('@')[0] != lines[i].split(",")[0].split('@')[0]:
-                start_days.append(i + 1)
         x = [i for i in range(len(my_rates))]
 
     updated_trace = go.Scatter(x=x, y=my_rates, mode="lines+markers", name="Line 1")
 
     # グラフに反映させる
     fig = go.Figure(data=[updated_trace])
-
-    # x=10の赤色の縦線を追加
     fig.update_layout(
-        shapes=[
-            dict(
-                type="line",
-                x0=x,
-                x1=x,
-                y0=0,
-                y1=1,
-                yref="paper",
-                line=dict(color="red"),
-            ) for x in start_days
-        ]
+        title=dict(
+            text="<b>レート推移",
+            font=dict(size=26, color="black"),
+            x=0.5,
+            y=0.77,
+            xanchor="center",
+        ),
+        legend=dict(xanchor="left", yanchor="bottom", x=0.02, y=0.85, orientation="h"),
+        yaxis=dict(
+            tickformat="%d",
+            dtick=100,
+            showgrid=True,
+            linecolor="red",
+        ),
+        font=dict(size=18, color="black"),
+    )
+    fig.update_layout(plot_bgcolor="white")
+    fig.update_xaxes(
+        showline=True,
+        linewidth=2,
+        linecolor="black",
+        color="black",
+        showgrid=False,
+    )
+    fig.update_yaxes(
+        showline=True, linewidth=2, linecolor="black", color="black",
+        gridcolor="lightgray",
+        gridwidth=2,
     )
 
     return fig
+
 
 # アプリケーションを実行
 if __name__ == "__main__":
