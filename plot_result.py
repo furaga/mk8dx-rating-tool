@@ -88,7 +88,7 @@ def update_graph(n_intervals):
         ),
         yaxis1=dict(
             tickformat="%d",
-            dtick=500,
+            dtick=100,
             showgrid=True,
             linecolor="red",
         ),
