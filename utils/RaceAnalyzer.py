@@ -3,6 +3,7 @@ import pandas as pd
 
 from utils import OBS
 
+
 def get_black_ratio(img):
     h, w = img.shape[:2]
     thr = 32
@@ -33,7 +34,6 @@ def is_pre_race_screen(img):
     return True
 
 
-
 def save_race_info(out_csv_path, race_info):
     header = ["video_path", "time", "cource", "race_type", "place"]
     header += [f"rate_start_{i}" for i in range(12)]
@@ -56,4 +56,3 @@ def save_race_info(out_csv_path, race_info):
     df = pd.DataFrame(rows)
     df.to_csv(out_csv_path, header=header, index=False, encoding="utf-8")
     pass
-

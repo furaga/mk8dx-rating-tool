@@ -1,5 +1,6 @@
 out*
 data/tmp/
+__tmp__.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
