@@ -221,6 +221,15 @@ def detect_final_rates(img):
     return False, 0, 0
 
 
+def OBS_apply_rate(race_info):
+    OBS.set_text("現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)")
+
+    text = OBS.get_text("最高レート")
+    cur_max_rate = int(text.split(" ")[1])
+    if cur_max_rate < race_info.my_rate:
+        text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate}")
+
+
 def parse_frame(img, ts, status, race_info):
     history.append({"ts": ts, "status": status})
     while len(history) > 10:
@@ -246,9 +255,7 @@ def parse_frame(img, ts, status, race_info):
             race_info.my_rate = my_rate
             race_info.place = place
             if enable_OBS:
-                OBS.set_text(
-                    "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
-                )
+                OBS_apply_rate(race_info)
             return "result", race_info
 
     if status == "result":
@@ -258,9 +265,7 @@ def parse_frame(img, ts, status, race_info):
             race_info.my_rate = my_rate
             race_info.place = place
             if enable_OBS:
-                OBS.set_text(
-                    "現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)"
-                )
+                OBS_apply_rate(race_info)
             return "", race_info
         else:
             return "none", race_info
@@ -326,7 +331,7 @@ def main(args):
             import datetime
 
             now = datetime.datetime.now()
-            ts_str = now.strftime("%Y-%m-%d %H:%M:%S")
+            ts_str = now.strftime("%Y-%m-%d@%H:%M:%S")
         else:
             ts += 500
             ts_str = str(args.video_path) + "@" + str(ts)

@@ -34,7 +34,9 @@ app.layout = html.Div(
 
 def get_avg_rate(line):
     import numpy as np
-    return np.median([int(r) for r in line.split(",")[5:]])
+
+    rates = [int(r) for r in line.split(",")[5:]]
+    return np.median([r for r in rates if r > 0])
 
 
 # コールバック関数
@@ -43,14 +45,16 @@ def get_avg_rate(line):
     Input("interval-component", "n_intervals"),
 )
 def update_graph(n_intervals):
+    show_num = 40
+
     # update_tracesを使用してマーカーカラーを変更
     with open("out.csv", "r", encoding="utf8") as f:
-        lines = f.readlines()[1:]  # [-40:]
+        lines = f.readlines()[1:][-show_num:]
         my_rates = [int(line.split(",")[4]) for line in lines]
         other_rates = [get_avg_rate(line) for line in lines]
         x = [i for i in range(len(my_rates))]
 
-        starts = [0]
+        starts = []
         for i in range(len(lines) - 1):
             ts1 = lines[i].split(",")[0]
             ts2 = lines[i + 1].split(",")[0]
@@ -65,7 +69,7 @@ def update_graph(n_intervals):
     )
 
     # グラフに反映させる
-    fig = go.Figure(data=[updated_trace, updated_trace_median])
+    fig = go.Figure(data=[updated_trace])  # , updated_trace_median])
     fig.update_layout(
         title=dict(
             text="<b>レート推移",
@@ -74,30 +78,44 @@ def update_graph(n_intervals):
             y=0.77,
             xanchor="center",
         ),
-        legend=dict(xanchor="left", yanchor="bottom", x=0.02, y=0.85, orientation="h"),
+        legend=dict(
+            xanchor="left",
+            yanchor="bottom",
+            x=0.02,
+            y=0.85,
+            font=dict(size=12),
+            orientation="h",
+        ),
         yaxis1=dict(
             tickformat="%d",
             dtick=500,
             showgrid=True,
             linecolor="red",
         ),
-        yaxis2=dict(side="right", showgrid=False, overlaying="y", tickformat="%d", linecolor="green"),
+        yaxis2=dict(
+            side="right",
+            showgrid=False,
+            overlaying="y",
+            tickformat="%d",
+            linecolor="green",
+        ),
         font=dict(size=18, color="black"),
     )
     fig.update_layout(plot_bgcolor="white")
-    # fig.update_layout(
-    #     shapes=[
-    #         dict(
-    #             type="line",
-    #             x0=x,
-    #             x1=x,
-    #             y0=0,
-    #             y1=1,
-    #             yref="paper",
-    #             line=dict(color="green", width=1),
-    #         ) for x in starts
-    #     ]
-    # )
+    fig.update_layout(
+        shapes=[
+            dict(
+                type="line",
+                x0=x,
+                x1=x,
+                y0=0,
+                y1=1,
+                yref="paper",
+                line=dict(color="orange", width=1),
+            )
+            for x in starts
+        ]
+    )
     fig.update_xaxes(
         showline=True,
         linewidth=2,

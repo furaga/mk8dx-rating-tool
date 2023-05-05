@@ -26,10 +26,7 @@ def set_browser_url(source_name: str, url: str):
 
 def set_visible(source_name: str, visible: bool):
     obs_ws_.call(
-        obswebsocket.requests.SetSceneItemProperties(
-            item=source_name,
-            visible=visible
-        )
+        obswebsocket.requests.SetSceneItemProperties(item=source_name, visible=visible)
     )
 
 
@@ -41,16 +38,10 @@ def set_text(source_name: str, new_text: str):
     )
 
 
-def set_text(source_name: str, new_text: str):
-    obs_ws_.call(
-        obswebsocket.requests.SetSourceSettings(
-            sourceName=source_name, sourceSettings={"text": new_text}
-        )
-    )
-
-
-all_img_paths = list(Path("record2").glob("*.jpg"))
-cur_img_index = 0
+def get_text(source_name: str):
+    return obs_ws_.call(
+        obswebsocket.requests.GetSourceSettings(sourceName=source_name)
+    ).datain["sourceSettings"]["text"]
 
 
 def capture_game_screen(sourceName: str = "映像キャプチャデバイス") -> np.ndarray:
