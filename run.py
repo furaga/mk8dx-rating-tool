@@ -210,7 +210,6 @@ def detect_final_rates(img):
     num = 0
     for i, roi in enumerate(result_rates_rois):
         crop = crop_img(inv_img, roi)
-        # cv2.imshow(f"roi{i}", crop)
         ret, rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
             crop
         )  # , verbose=True)
@@ -225,9 +224,9 @@ def OBS_apply_rate(race_info):
     OBS.set_text("現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)")
 
     text = OBS.get_text("最高レート")
-    cur_max_rate = int(text.split(" ")[1])
+    cur_max_rate = int(text.split(" ")[1].replace(",", ""))
     if cur_max_rate < race_info.my_rate:
-        text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate}")
+        text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate:,}")
 
 
 def parse_frame(img, ts, status, race_info):
@@ -355,10 +354,10 @@ def main(args):
                 if next_status == "race":
                     ts += 100 * 1000
 
-        cv2.imshow("frame", frame)
-        # if cv2.waitKey(0 if history[-1]["is_pre_race"] else 1) == ord("q"):
-        if cv2.waitKey(1) == ord("q"):
-            break
+        if args.imshow:
+            cv2.imshow("frame", frame)
+            if cv2.waitKey(1) == ord("q"):
+                break
 
         if enable_OBS:
             time_to_sleep = 100 - int((time.time() - since) * 1000)
