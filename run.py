@@ -39,6 +39,7 @@ class RaceInfo:
         self.race_type: str = ""
         self.place: int = 0
         self.rates: List[int] = [0 for _ in range(12)]
+        self.rates_after: List[int] = [0 for _ in range(12)]
         self.my_rate: int = 0
 
     def __repr__(self) -> str:
@@ -95,7 +96,7 @@ def crop_img(img, roi):
     return img
 
 
-def detect_rates(img):
+def detect_rates_before(img):
     players_roi = players_roi_base
 
     players_img = crop_img(img, players_roi)
@@ -205,7 +206,7 @@ def detect_course(img):
     return best_course, best_race_type
 
 
-def detect_final_rates(img):
+def detect_rates_after(img):
     inv_img = 255 - cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     num = 0
     for i, roi in enumerate(result_rates_rois):
@@ -215,9 +216,22 @@ def detect_final_rates(img):
         )  # , verbose=True)
         if ret and min_my_rate <= rate <= max_my_rate:
             imwrite_safe(f"rate_{_cnt:05d}.png", crop)
-            return True, rate, i + 1
 
-    return False, 0, 0
+            rates_after = []
+            for i, roi in enumerate(result_rates_rois):
+                crop = crop_img(inv_img, roi)
+                ret, rate = mk8dx_digit_ocr.digit_ocr.detect_digit(
+                    crop
+                )
+                if not ret:
+                    rate = 0
+                if not (500 <= rate <= 99999):
+                    rate = 0
+                rates_after.append(rate)
+                
+            return True, rate, i + 1, rates_after
+        
+    return False, 0, 0, []
 
 
 def OBS_apply_rate(race_info):
@@ -236,7 +250,7 @@ def parse_frame(img, ts, status, race_info):
 
     is_pre_race = is_pre_race_screen(img)
     if is_pre_race:
-        rates = detect_rates(img)
+        rates = detect_rates_before(img)
         if len([x for x in rates if x > 0]) >= 3:
             history[-1].update({"rates": rates})
             race_info.rates = rates
@@ -248,17 +262,18 @@ def parse_frame(img, ts, status, race_info):
             return "race", race_info
 
     if status == "race":
-        ret, my_rate, place = detect_final_rates(img)
+        ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
+            race_info.rates_after = rates_after
             if enable_OBS:
                 OBS_apply_rate(race_info)
             return "result", race_info
 
     if status == "result":
-        ret, my_rate, place = detect_final_rates(img)
+        ret, my_rate, place = detect_rates_after(img)
         if ret:
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
@@ -275,6 +290,7 @@ def parse_frame(img, ts, status, race_info):
 def save_race_info(out_csv_path, ts, race_info):
     header = ["ts", "course", "race_type", "place", "my_rate"]
     header += [f"rates_{i}" for i in range(12)]
+    header += [f"rates_after_{i}" for i in range(12)]
 
     if not out_csv_path.exists():
         with open(out_csv_path, "w", encoding="utf8") as f:
@@ -287,6 +303,7 @@ def save_race_info(out_csv_path, ts, race_info):
         text += str(race_info.place) + ","
         text += str(race_info.my_rate) + ","
         text += ",".join([str(r) for r in race_info.rates]) + "\n"
+        text += ",".join([str(r) for r in race_info.rates_after]) + "\n"
         print(text.strip(), flush=True)
         f.write(text)
         f.flush()
