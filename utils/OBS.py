@@ -45,6 +45,7 @@ def get_text(source_name: str):
 
 
 def capture_game_screen(sourceName: str = "映像キャプチャデバイス") -> np.ndarray:
+#    sourceName = "2023-05-05 15-15-03 - Trim.mkv"
     out_path = Path(os.getcwd()) / "__tmp__.jpg"
     obs_ws_.call(
         obswebsocket.requests.TakeSourceScreenshot(

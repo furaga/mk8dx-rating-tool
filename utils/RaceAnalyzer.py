@@ -2,6 +2,7 @@ import cv2
 import pandas as pd
 
 from utils import OBS
+import mk8dx_digit_ocr
 
 
 def get_black_ratio(img):
@@ -34,25 +35,34 @@ def is_pre_race_screen(img):
     return True
 
 
-def save_race_info(out_csv_path, race_info):
-    header = ["video_path", "time", "cource", "race_type", "place"]
-    header += [f"rate_start_{i}" for i in range(12)]
-    header += [f"rates_end_{i}" for i in range(12)]
+def detect_number(img, verbose):
+    coin_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, value = mk8dx_digit_ocr.detect_digit(coin_img, verbose)
+    # print(ret, value)
+    return ret, value
 
-    if not out_csv_path.exists():
-        with open(out_csv_path, "w") as f:
-            f.write(",".join(header) + "\n")
 
-    with open(out_csv_path, "a") as f:
-        f.write(race_info.cource + ",")
-        f.write(race_info.race_type + ",")
-        f.write(race_info.place + ",")
-        f.write(",".join([r for r in race_info.rates_start]) + ",")
-        f.write(",".join([r for r in race_info.rates_end]) + "\n")
-        f.flush()
+# コイン枚数
+def detect_coin(img):
+    h, w = img.shape[:2]
+    x1 = int(133 / 1920 * w)
+    x2 = int(214 / 1920 * w)
+    y1 = int(972 / 1080 * h)
+    y2 = int(1032 / 1080 * h)
+    ret, num = detect_number(img[y1:y2, x1:x2], False)
+    if ret and 0 <= num <= 10:
+        return ret, num
+    return False, -1
 
-    rows = []
 
-    df = pd.DataFrame(rows)
-    df.to_csv(out_csv_path, header=header, index=False, encoding="utf-8")
-    pass
+# 何周目か
+def detect_lap(img, max_lap=3):
+    h, w = img.shape[:2]
+    x1 = int(300 / 1920 * w)
+    x2 = int(345 / 1920 * w)
+    y1 = int(972 / 1080 * h)
+    y2 = int(1032 / 1080 * h)
+    ret, num = detect_number(img[y1:y2, x1:x2], False)
+    if ret and 1 <= num <= max_lap:
+        return ret, num
+    return False, -1
