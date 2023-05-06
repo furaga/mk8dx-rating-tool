@@ -199,8 +199,8 @@ def detect_course(img):
                 best_race_type = k
 
     # save
-    imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
-    imwrite_safe(f"data/tmp/race_type/{best_course}_{_cnt:05d}.png", race_type_img)
+    # imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
+    # imwrite_safe(f"data/tmp/race_type/{best_course}_{_cnt:05d}.png", race_type_img)
     _cnt += 1
 
     return best_course, best_race_type
@@ -211,26 +211,24 @@ def detect_rates_after(img):
     num = 0
     for i, roi in enumerate(result_rates_rois):
         crop = crop_img(inv_img, roi)
-        ret, rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
+        ret, my_rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
             crop
         )  # , verbose=True)
-        if ret and min_my_rate <= rate <= max_my_rate:
+        if ret and min_my_rate <= my_rate <= max_my_rate:
             imwrite_safe(f"rate_{_cnt:05d}.png", crop)
 
             rates_after = []
-            for i, roi in enumerate(result_rates_rois):
+            for roi in result_rates_rois:
                 crop = crop_img(inv_img, roi)
-                ret, rate = mk8dx_digit_ocr.digit_ocr.detect_digit(
-                    crop
-                )
+                ret, rate = mk8dx_digit_ocr.digit_ocr.detect_digit(crop)
                 if not ret:
                     rate = 0
                 if not (500 <= rate <= 99999):
                     rate = 0
                 rates_after.append(rate)
-                
-            return True, rate, i + 1, rates_after
-        
+
+            return True, my_rate, i + 1, rates_after
+
     return False, 0, 0, []
 
 
@@ -273,11 +271,12 @@ def parse_frame(img, ts, status, race_info):
             return "result", race_info
 
     if status == "result":
-        ret, my_rate, place = detect_rates_after(img)
+        ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
+            race_info.rates_after = rates_after
             if enable_OBS:
                 OBS_apply_rate(race_info)
             return "", race_info
@@ -302,7 +301,7 @@ def save_race_info(out_csv_path, ts, race_info):
         text += race_info.race_type + ","
         text += str(race_info.place) + ","
         text += str(race_info.my_rate) + ","
-        text += ",".join([str(r) for r in race_info.rates]) + "\n"
+        text += ",".join([str(r) for r in race_info.rates]) + ","
         text += ",".join([str(r) for r in race_info.rates_after]) + "\n"
         print(text.strip(), flush=True)
         f.write(text)
