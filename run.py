@@ -241,8 +241,33 @@ def OBS_apply_rate(race_info):
         text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate:,}")
 
 
+is_item_table_visible = True
+prev_item_table = "", ""
+
+
+def OBS_show_item_table(visible, cource, race_type, n_lap):
+    global is_item_table_visible, prev_item_table
+    if visible:
+        path = Path("data/item_table") / f"{cource}_{n_lap}.png"
+        if not path.exists():
+            path = Path("data/item_table") / f"{cource}.png"
+        if not path.exists():
+            return
+        if prev_item_table != (str(path), race_type):
+            img = imread_safe(str(path), cv2.IMREAD_UNCHANGED)
+            if race_type == "ミラー":
+                img = cv2.flip(img, 1)
+            # TODO: no hard coding
+            cv2.imwrite("C:/Users/furag/Documents/doc/OBS/texture/item_table.png", img)
+            prev_item_table = str(path), race_type
+
+    if visible != is_item_table_visible:
+        is_item_table_visible = visible
+        OBS.set_visible("アイテムテーブル", visible)
+
+
 def parse_frame(img, ts, status, race_info):
-    history.append({"ts": ts, "status": status})
+    history.append({"ts": ts, "status": status, "visible_coin_lap": False})
     while len(history) > 10:
         history.pop(0)
 
@@ -259,9 +284,24 @@ def parse_frame(img, ts, status, race_info):
                 OBS.set_text("コース情報", f"{course}, {race_type}")
             return "race", race_info
 
+    # アイテムテーブルの表示・非表示きりかえ
+    if enable_OBS:
+        ret_coin, _ = RaceAnalyzer.detect_coin(img)
+        ret_lap, n_lap = RaceAnalyzer.detect_lap(
+            img, 7 if race_info.course == "ベビィパーク" else 3
+        )
+        history[-1].update({"visible_coin_lap": ret_coin and ret_lap})
+        if len(history) >= 3:
+            if np.all([x["visible_coin_lap"] for x in history[-3:]]):
+                OBS_show_item_table(True, race_info.course, race_info.race_type, n_lap)
+            if np.all([not x["visible_coin_lap"] for x in history[-3:]]):
+                OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
+
     if status == "race":
         ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
+            if enable_OBS:
+                OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
@@ -273,6 +313,8 @@ def parse_frame(img, ts, status, race_info):
     if status == "result":
         ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
+            if enable_OBS:
+                OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
