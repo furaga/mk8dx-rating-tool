@@ -45,7 +45,7 @@ def get_avg_rate(line):
     Input("interval-component", "n_intervals"),
 )
 def update_graph(n_intervals):
-    show_num = 40
+    show_num = 60
 
     # update_tracesを使用してマーカーカラーを変更
     with open("out.csv", "r", encoding="utf8") as f:
