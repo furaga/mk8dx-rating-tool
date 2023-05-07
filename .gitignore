@@ -1,5 +1,7 @@
 out*
 data/tmp/
+token.json
+bash.ps1
 __tmp__.jpg
 
 # Byte-compiled / optimized / DLL files
