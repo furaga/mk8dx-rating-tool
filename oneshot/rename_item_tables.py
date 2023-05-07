@@ -84,6 +84,7 @@ names = [
 ]
 
 from pathlib import Path
+
 for i, name in enumerate(names):
     shutil.copy(f"item_tables/{i + 1:02d}.png", f"renamed/{name}.png")
     for j in range(1, 4):

@@ -233,7 +233,7 @@ def detect_rates_after(img):
 
 
 def OBS_apply_rate(race_info):
-    OBS.set_text("現在レート・前回順位", f"(現在 {race_info.my_rate}, 前回{race_info.place}位)")
+    OBS.set_text("現在レート・前回順位", f"(現在 {race_info.my_rate:,}, 前回{race_info.place}位)")
 
     text = OBS.get_text("最高レート")
     cur_max_rate = int(text.split(" ")[1].replace(",", ""))
@@ -241,7 +241,7 @@ def OBS_apply_rate(race_info):
         text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate:,}")
 
 
-is_item_table_visible = True
+is_item_table_visible = False
 prev_item_table = "", ""
 
 
@@ -266,6 +266,16 @@ def OBS_show_item_table(visible, cource, race_type, n_lap):
         OBS.set_visible("アイテムテーブル", visible)
 
 
+is_timer_visible = False
+
+
+def OBS_show_timer(visible):
+    global is_timer_visible
+    if visible != is_timer_visible:
+        is_timer_visible = visible
+        OBS.set_visible("timer.mp4", visible)
+
+
 def parse_frame(img, ts, status, race_info):
     history.append({"ts": ts, "status": status, "visible_coin_lap": False})
     while len(history) > 10:
@@ -284,24 +294,36 @@ def parse_frame(img, ts, status, race_info):
                 OBS.set_text("コース情報", f"{course}, {race_type}")
             return "race", race_info
 
-    # アイテムテーブルの表示・非表示きりかえ
     if enable_OBS:
         ret_coin, _ = RaceAnalyzer.detect_coin(img)
         ret_lap, n_lap = RaceAnalyzer.detect_lap(
             img, 7 if race_info.course == "ベビィパーク" else 3
         )
         history[-1].update({"visible_coin_lap": ret_coin and ret_lap})
-        if len(history) >= 3:
-            if np.all([x["visible_coin_lap"] for x in history[-3:]]):
-                OBS_show_item_table(True, race_info.course, race_info.race_type, n_lap)
-            if np.all([not x["visible_coin_lap"] for x in history[-3:]]):
-                OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
 
     if status == "race":
+        # アイテムテーブルの表示・非表示きりかえ
+        if enable_OBS:
+            if len(history) >= 3:
+                if np.all([x["visible_coin_lap"] for x in history[-3:]]):
+                    OBS_show_item_table(
+                        True, race_info.course, race_info.race_type, n_lap
+                    )
+                # if np.all([not x["visible_coin_lap"] for x in history[-3:]]):
+                #     OBS_show_item_table(
+                #         False, race_info.course, race_info.race_type, n_lap
+                #     )
+            # タイマーオン
+            if len(history) >= 3:
+                if np.all([x["visible_coin_lap"] for x in history[-3:]]):
+                    OBS_show_timer(True)
+
+        # 結果表のパース
         ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
             if enable_OBS:
                 OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
+                OBS_show_timer(False)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
@@ -311,10 +333,12 @@ def parse_frame(img, ts, status, race_info):
             return "result", race_info
 
     if status == "result":
+        # 結果表のパース
         ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
             if enable_OBS:
                 OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
+                OBS_show_timer(False)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
