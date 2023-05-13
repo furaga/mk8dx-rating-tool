@@ -284,9 +284,12 @@ def parse_frame(img, ts, status, race_info):
     is_pre_race = is_pre_race_screen(img)
     if is_pre_race:
         rates = detect_rates_before(img)
-        if len([x for x in rates if x > 0]) >= 3:
+        n_valid = len([x for x in rates if x > 0])
+        if n_valid >= 3:
             history[-1].update({"rates": rates})
-            race_info.rates = rates
+            prev_n_valid = len([x for x in race_info.rates if x > 0])
+            if prev_n_valid <= n_valid:
+                race_info.rates = rates
             course, race_type = detect_course(img)
             race_info.course = course
             race_info.race_type = race_type
@@ -327,7 +330,10 @@ def parse_frame(img, ts, status, race_info):
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
-            race_info.rates_after = rates_after
+            n_valid = len([x for x in rates_after if x > 0])
+            prev_n_valid = len([x for x in race_info.rates_after if x > 0])
+            if prev_n_valid <= n_valid:
+                race_info.rates_after = rates_after
             if enable_OBS:
                 OBS_apply_rate(race_info)
             return "result", race_info
@@ -342,7 +348,10 @@ def parse_frame(img, ts, status, race_info):
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
-            race_info.rates_after = rates_after
+            n_valid = len([x for x in rates_after if x > 0])
+            prev_n_valid = len([x for x in race_info.rates_after if x > 0])
+            if prev_n_valid <= n_valid:
+                race_info.rates_after = rates_after
             if enable_OBS:
                 OBS_apply_rate(race_info)
             return "", race_info
