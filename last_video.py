@@ -16,36 +16,16 @@ from utils import OBS, RaceAnalyzer
 def parse_args():
     parser = argparse.ArgumentParser(description="")
     # parser.add_argument("--video_path", type=Path, default=None)
+    parser.add_argument("--mode", type=str, default="list")
     parser.add_argument("--race_info_path", type=Path, default="out.csv")
     parser.add_argument("--imshow", action="store_true")
+    parser.add_argument("--template_ymmp", type=Path, default="data/template_最下位葬儀会場.ymmp")
+    parser.add_argument("--video_path", type=Path, default=None)
+    parser.add_argument("--start_time", type=str, default="0:00:00")
+    parser.add_argument("--end_time", type=str, default="0:00:30")
+    parser.add_argument("--out_ymmp_path", type=Path, default=None)
     args = parser.parse_args()
     return args
-
-
-# def
-
-# def parse_frame(img, ts, status, race_info):
-#     history.append({"ts": ts, "status": status, "visible_coin_lap": False})
-#     while len(history) > 10:
-#         history.pop(0)
-
-#     is_pre_race = is_pre_race_screen(img)
-#     if is_pre_race:
-#         rates = detect_rates_before(img)
-#         n_valid = len([x for x in rates if x > 0])
-#         if n_valid >= 3:
-#             history[-1].update({"rates": rates})
-#             prev_n_valid = len([x for x in race_info.rates if x > 0])
-#             if prev_n_valid <= n_valid:
-#                 race_info.rates = rates
-#             course, race_type = detect_course(img)
-#             race_info.course = course
-#             race_info.race_type = race_type
-#             if enable_OBS:
-#                 OBS.set_text("コース情報", f"{course}, {race_type}")
-#             return "race", race_info
-
-#     return "", race_info
 
 
 def collect_last_place_races(df):
@@ -62,46 +42,46 @@ def collect_last_place_races(df):
             print(row["ts"], row["course"], row["place"], row["my_rate"], n_players)
     return indexes
 
+def generate_ymmp(tempalte_ymmp, video_path, start_time_str, end_time_str, output_path):
+    cap = cv2.VideoCapture(str(video_path))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+
+    from datetime import datetime
+    start_time = datetime.strptime(start_time_str, "%H:%M:%S")
+    end_time = datetime.strptime(end_time_str, "%H:%M:%S")
+
+    video_length = int((end_time - start_time).total_seconds() * 60)
+    print(end_time - start_time, "|", video_length, fps)
+
+    with open(tempalte_ymmp, "r", encoding="utf8") as f:
+        template = f.read()
+
+    output = template
+    video_path_escaped = str(video_path).replace('\\', '\\\\')
+    output = output.replace("{{VIDEO_PATH}}", f'"{video_path_escaped}"')
+    output = output.replace("{{VIDEO_OFFSET_TIME}}", f'"{start_time_str}"')
+    output = output.replace("{{VIDEO_LENGTH}}", str(video_length))
+    output = output.replace("{{SOUND_LENGTH}}", str(video_length + 90))
+
+    with open(output_path, "w", encoding="utf8") as f:
+        f.write(output)
+
 
 def main(args):
     #    cap = cv2.VideoCapture(str(args.video_path))
 
-    import pandas as pd
-
-    df = pd.read_csv(
-        args.race_info_path,
-        encoding="utf8",
-        engine="python",
-        on_bad_lines="skip",
-        # usecols=[
-        #     "ts",
-        #     "course",
-        #     "race_type",
-        #     "place",
-        #     "my_rate",
-        #     "rates_0",
-        #     "rates_1",
-        #     "rates_2",
-        #     "rates_3",
-        #     "rates_4",
-        #     "rates_5",
-        #     "rates_6",
-        #     "rates_7",
-        #     "rates_8",
-        #     "rates_9",
-        #     "rates_10",
-        #     "rates_11",
-        # ],
-    )
-
-    indexes = collect_last_place_races(df)
-
-    # while True:
-    #     ret, img = cap.read()
-    #     if not ret:
-    #         break
-    #     cv2.imshow("img", img)
-    #     cv2.waitKey(1)
+    if args.mode == "list":
+        import pandas as pd
+        df = pd.read_csv(
+            args.race_info_path,
+            encoding="utf8",
+            engine="python",
+            on_bad_lines="skip",
+        )
+        collect_last_place_races(df)
+    else:
+        args.out_ymmp_path.parent.mkdir(parents=True, exist_ok=True)
+        generate_ymmp(args.template_ymmp, args.video_path, args.start_time, args.end_time, args.out_ymmp_path)
 
 
 if __name__ == "__main__":
