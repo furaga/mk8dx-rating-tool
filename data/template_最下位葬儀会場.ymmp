@@ -1682,7 +1682,7 @@
         "FilePath": "C:\\Users\\furag\\Documents\\doc\\youtube\\shorts\\videos\\Buddhism_sutra2.mp3",
         "AudioTrackIndex": 0,
         "Volume": {
-          "From": 300.0,
+          "From": 150.0,
           "To": 0.0,
           "AnimationType": "なし",
           "Span": 0.0
@@ -1705,7 +1705,7 @@
         "Group": 0,
         "Frame": 0,
         "Layer": 0,
-        "Length": {{TOTAL_LENGTH}},
+        "Length": {{SOUND_LENGTH}},
         "IsLocked": false,
         "IsHidden": false
       }
