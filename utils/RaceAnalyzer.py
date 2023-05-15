@@ -59,9 +59,9 @@ def detect_coin(img):
 def detect_lap(img, max_lap=3):
     h, w = img.shape[:2]
     x1 = int(300 / 1920 * w)
-    x2 = int(345 / 1920 * w)
-    y1 = int(972 / 1080 * h)
-    y2 = int(1032 / 1080 * h)
+    x2 = int(347 / 1920 * w)
+    y1 = int(970 / 1080 * h)
+    y2 = int(1037 / 1080 * h)
     ret, num = detect_number(img[y1:y2, x1:x2], False)
     if ret and 1 <= num <= max_lap:
         return ret, num
