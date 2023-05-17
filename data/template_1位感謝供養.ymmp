@@ -1,5 +1,5 @@
 ﻿{
-  "FilePath": "C:\\Users\\furag\\Documents\\doc\\youtube\\shorts\\【マリオカート8DX】#001 メエワーの1位感謝供養.ymmp",
+  "FilePath": "C:\\Users\\furag\\Documents\\doc\\youtube\\shorts\\【マリオカート8DX】#001 1位お焚き上げ.ymmp",
   "Timeline": {
     "VideoInfo": {
       "FPS": 60,
@@ -1111,9 +1111,10 @@
         "IsLocked": false,
         "IsHidden": false
       },
+      
       {
         "$type": "YukkuriMovieMaker.Project.Items.TextItem, YukkuriMovieMaker",
-        "Text": "1位感謝供養",
+        "Text": "1位お焚き上げ",
         "Decorations": [
           {
             "Start": 0,
@@ -1128,7 +1129,7 @@
           },
           {
             "Start": 2,
-            "Length": 4,
+            "Length": 5,
             "IsBold": false,
             "IsItalic": false,
             "Scale": 1.0,
@@ -1140,7 +1141,7 @@
         ],
         "Font": "HG創英角ﾎﾟｯﾌﾟ体",
         "FontSize": {
-          "From": 29.200000000000003,
+          "From": 26.800000000000004,
           "To": 1.0,
           "AnimationType": "なし",
           "Span": 0.0
@@ -1166,13 +1167,13 @@
         "Italic": false,
         "IsDevidedPerCharacter": false,
         "X": {
-          "From": -479.5,
+          "From": -491.5,
           "To": 0.0,
           "AnimationType": "なし",
           "Span": 0.0
         },
         "Y": {
-          "From": 540.0,
+          "From": 525.0,
           "To": 0.0,
           "AnimationType": "なし",
           "Span": 0.0
@@ -1230,7 +1231,7 @@
         "Group": 0,
         "Frame": 0,
         "Layer": 9,
-        "Length": {{TOTAL_LENGTH}},
+        "Length": 2700,
         "PlaybackRate": 100.0,
         "ContentOffset": "00:00:00",
         "IsLocked": false,
