@@ -1679,10 +1679,10 @@
       {
         "$type": "YukkuriMovieMaker.Project.Items.AudioItem, YukkuriMovieMaker",
         "IsWaveformEnabled": false,
-        "FilePath": "C:\\Users\\furag\\Documents\\doc\\youtube\\shorts\\videos\\Buddhism_sutra2.mp3",
+        "FilePath": "C:\\Users\\furag\\Documents\\doc\\youtube\\shorts\\videos\\pixta_57287683.wav",
         "AudioTrackIndex": 0,
         "Volume": {
-          "From": 150.0,
+          "From": 0.0,
           "To": 0.0,
           "AnimationType": "なし",
           "Span": 0.0
