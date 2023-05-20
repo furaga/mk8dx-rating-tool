@@ -62,7 +62,9 @@ def update_graph(n_intervals):
                 starts.append(i + 1)
 
     updated_trace = go.Scatter(
-        x=x, y=my_rates, mode="lines+markers", name="自分のレート", yaxis="y1"
+        x=x, y=my_rates, mode="lines+markers", name="自分のレート", yaxis="y1",
+        line=dict(color="#11ff11", width=2),
+        marker=dict(size=4),
     )
     updated_trace_median = go.Scatter(
         x=x, y=other_rates, mode="lines+markers", name="部屋のレート中央値", yaxis="y2"
@@ -70,38 +72,24 @@ def update_graph(n_intervals):
 
     # グラフに反映させる
     fig = go.Figure(data=[updated_trace])  # , updated_trace_median])
+
+    # 基本レイアウト
+    fig.update_layout(
+        paper_bgcolor="black",
+        plot_bgcolor="black",
+        font=dict(size=18, color="white"),
+    )
+
+    # タイトル
     fig.update_layout(
         title=dict(
-            text="<b>レート推移",
-            font=dict(size=26, color="black"),
+            text="<i>Recent VR",
+            font=dict(size=32, color="white"),
             x=0.5,
-            y=0.77,
+            y=0.82,
             xanchor="center",
-        ),
-        legend=dict(
-            xanchor="left",
-            yanchor="bottom",
-            x=0.02,
-            y=0.85,
-            font=dict(size=12),
-            orientation="h",
-        ),
-        yaxis1=dict(
-            tickformat="%d",
-            dtick=100,
-            showgrid=True,
-            linecolor="red",
-        ),
-        yaxis2=dict(
-            side="right",
-            showgrid=False,
-            overlaying="y",
-            tickformat="%d",
-            linecolor="green",
-        ),
-        font=dict(size=18, color="black"),
+        )
     )
-    fig.update_layout(plot_bgcolor="white")
     fig.update_layout(
         shapes=[
             dict(
@@ -111,24 +99,27 @@ def update_graph(n_intervals):
                 y0=0,
                 y1=1,
                 yref="paper",
-                line=dict(color="orange", width=1),
+                line=dict(color="#3333ff", width=1),
             )
             for x in starts
         ]
     )
     fig.update_xaxes(
         showline=True,
-        linewidth=2,
-        linecolor="black",
-        color="black",
+        linewidth=3,
+        showticklabels=False,
         showgrid=False,
+        zeroline=False,
     )
     fig.update_yaxes(
         showline=True,
-        linewidth=2,
-        linecolor="black",
-        color="black",
-        gridcolor="lightgray",
+        linewidth=3,
+        linecolor="white",
+        dtick=100,
+        tickformat="%d",
+        color="white",
+        showgrid=True,
+        gridcolor="#cccccc",
         gridwidth=1,
     )
 
