@@ -51,7 +51,6 @@ def generate_ymmp(tempalte_ymmp, video_path, start_time_str, end_time_str, outpu
     end_time = datetime.strptime(end_time_str, "%H:%M:%S")
 
     video_length = int((end_time - start_time).total_seconds() * 60)
-    print(end_time - start_time, "|", video_length, fps)
 
     with open(tempalte_ymmp, "r", encoding="utf8") as f:
         template = f.read()
@@ -66,6 +65,7 @@ def generate_ymmp(tempalte_ymmp, video_path, start_time_str, end_time_str, outpu
     with open(output_path, "w", encoding="utf8") as f:
         f.write(output)
 
+    print(f"Save last race video. Video time: {end_time - start_time} | {str(output_path)}.")
 
 def main(args):
     #    cap = cv2.VideoCapture(str(args.video_path))
