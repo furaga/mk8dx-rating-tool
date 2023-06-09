@@ -1231,7 +1231,7 @@
         "Group": 0,
         "Frame": 0,
         "Layer": 9,
-        "Length": 2700,
+        "Length": {{TOTAL_LENGTH}},
         "PlaybackRate": 100.0,
         "ContentOffset": "00:00:00",
         "IsLocked": false,
