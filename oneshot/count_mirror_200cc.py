@@ -318,6 +318,26 @@ def main(args):
                 )
         cap.release()
 
+def main_only_with_images(args):
+    out_csv_path = "count_mirror_200cc.csv"
+    with open(out_csv_path, "w", encoding="utf8") as f:
+        all_img_paths = list(args.out_dir.glob("*/*.jpg"))
+        all_img_paths = [img_path for img_path in all_img_paths if img_path.parent.stem != "middle_frames"]
+        for i, img_path in enumerate(all_img_paths):
+            if i % 100 == 0:
+                print(f"{i+1}/{len(all_img_paths)}: {img_path}")
+            img = imread_safe(str(img_path))
+            rates = detect_rates_before(img)
+            course, race_type = detect_course(img)
+            text = img_path.parent.stem + "@" + img_path.stem + ","
+            text += course + ","
+            text += race_type + ","
+            text += ",".join([str(r) for r in rates]) + "\n"
+#            print(text, end="", flush=True)
+            f.write(text)
+            f.flush()
+
 
 if __name__ == "__main__":
-    main(parse_args())
+#    main(parse_args())
+    main_only_with_images(parse_args())
