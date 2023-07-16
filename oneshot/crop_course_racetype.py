@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 path = Path(
-    r"C:\Users\furag\Documents\prog\python\mk8dx_tools\mirror_200cc_analyzer\data\person0"
+    r"C:\Users\furag\Downloads\新コース"
 )
 
 
@@ -21,6 +21,25 @@ def imread_safe(filename, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
         return None
 
 
+
+def imwrite_safe(filename, img, params=None):
+    try:
+        import os
+
+        ext = os.path.splitext(filename)[1]
+        result, n = cv2.imencode(ext, img, params)
+
+        if result:
+            with open(filename, mode="w+b") as f:
+                n.tofile(f)
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
+
+
 def crop_img(img, roi):
     h, w = img.shape[:2]
     img = img[
@@ -30,8 +49,8 @@ def crop_img(img, roi):
     return img
 
 
-cnt = 0
-for img_path in path.glob("*/*.png"):
+cnt = 20000
+for img_path in path.glob("*.png"):
     if "_frame" in str(img_path):
         continue
     cnt += 1
@@ -40,5 +59,6 @@ for img_path in path.glob("*/*.png"):
         continue
     race_type_img = crop_img(img, race_type_roi)
     course_img = crop_img(img, course_roi)
-    cv2.imwrite(f"race_type/{cnt:05d}.png", race_type_img)
-    cv2.imwrite(f"course/{cnt:05d}.png", course_img)
+    #cv2.imwrite(f"race_type/{cnt:05d}.png", race_type_img)
+    Path(f"course/{img_path.stem}").mkdir(exist_ok=True, parents=True)
+    imwrite_safe(f"course/{img_path.stem}/{cnt:05d}.png", course_img)

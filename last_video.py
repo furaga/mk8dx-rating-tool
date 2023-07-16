@@ -60,7 +60,8 @@ def generate_ymmp(tempalte_ymmp, video_path, start_time_str, end_time_str, outpu
     output = output.replace("{{VIDEO_PATH}}", f'"{video_path_escaped}"')
     output = output.replace("{{VIDEO_OFFSET_TIME}}", f'"{start_time_str}"')
     output = output.replace("{{VIDEO_LENGTH}}", str(video_length))
-    output = output.replace("{{SOUND_LENGTH}}", str(video_length + 90))
+    output = output.replace("{{SOUND_LENGTH}}", str(video_length + 30))
+    output = output.replace("{{FINAL_TEXT_OFFSET}}", str(video_length + 30 - 360))
 
     with open(output_path, "w", encoding="utf8") as f:
         f.write(output)

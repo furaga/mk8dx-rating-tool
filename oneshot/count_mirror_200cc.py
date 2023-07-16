@@ -137,7 +137,7 @@ def detect_rates_before(img):
             players.append(
                 crop_img(players_img, [x / 2, y / 6, (x + 1) / 2, (y + 1) / 6])
             )
-
+    
     rates = []
     for i, p in enumerate(players):
         rate_img = crop_img(p, [0.75, 0.5, 0.995, 0.995])
@@ -204,27 +204,22 @@ def detect_course(img):
 
 
 def parse_frame(img, ts, status, race_info):
-    history.append({"ts": ts, "status": status, "visible_coin_lap": False})
+    history.append({})
     while len(history) > 10:
         history.pop(0)
 
     is_pre_race = is_pre_race_screen(img)
     if is_pre_race:
         rates = detect_rates_before(img)
-        n_valid = len([x for x in rates if x > 500])
+        # 左半分にレートが写っていれば
+        n_valid = len([x for x in rates[:6] if x > 500])
         if n_valid >= 3:
             history[-1].update({"rates": rates})
-            prev_n_valid = len([x for x in race_info.rates if x > 500])
-            if prev_n_valid <= n_valid:
-                race_info.rates = rates
+            race_info.rates = rates
             course, race_type = detect_course(img)
             race_info.course = course
             race_info.race_type = race_type
-            if prev_n_valid >= n_valid:
-                # 認識する数字の数が増えなくなったらいい感じの画面になっていると判断する
-                return "race", race_info
-            else:
-                return "", race_info
+            return "race", race_info
 
     return "", race_info
 
@@ -242,8 +237,6 @@ def main(args):
                 continue
             crop_dict[tokens[0]] = [int(x) for x in tokens[1:]]
 
-    print(crop_dict)
-
     out_csv_path = args.out_dir / "race_info.csv"
 
     # 1Frameだけ取り出す
@@ -252,7 +245,7 @@ def main(args):
         cap = cv2.VideoCapture(str(video_path))
         out_path = args.out_dir / "middle_frames" / f"{video_path.stem}.jpg"
         out_path.parent.mkdir(exist_ok=True, parents=True)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, cap.get(cv2.CAP_PROP_FRAME_COUNT) // 2)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, cap.get(cv2.CAP_PROP_FRAME_COUNT) // 3)
 
         img = cap.read()[1]
         H, W = img.shape[:2]
@@ -262,8 +255,7 @@ def main(args):
 
         imwrite_safe(str(out_path), img)
         cap.release()
-
-    return
+    return 
 
     for vi, video_path in enumerate(all_video_path):
         print(f"{vi+1}/{len(all_video_path)}: {video_path}")
@@ -280,10 +272,24 @@ def main(args):
             ret, frame = cap.read()
             if not ret:
                 break
-            cv2.imshow("frame", frame)
+
+            H, W = frame.shape[:2]
+            if video_path.stem in crop_dict:
+                x1, y1, x2, y2 = crop_dict[video_path.stem]
+                frame = crop_img(frame, (x1 / W, y1 / H, x2 / W, y2 / H))
+
+            cv2.imshow("frame1", frame)
             cv2.waitKey(1)
             status, race_info = parse_frame(frame, 0, status, race_info)
-            if status == "race":
+            history[-1].update({"status": status})
+
+            if (
+                len(history) >= 3
+                and history[-1]["status"]
+                == history[-2]["status"]
+                == history[-3]["status"]
+                == "race"
+            ):
                 # TODO: save
                 out_img_path = (
                     args.out_dir / f"{video_path.stem}/{current_time:05d}s.jpg"
@@ -295,10 +301,7 @@ def main(args):
                     text = video_path.stem + "@" + str(current_time) + ","
                     text += race_info.course + ","
                     text += race_info.race_type + ","
-                    text += str(race_info.place) + ","
-                    text += str(race_info.my_rate) + ","
-                    text += ",".join([str(r) for r in race_info.rates]) + ","
-                    text += ",".join([str(r) for r in race_info.rates_after]) + "\n"
+                    text += ",".join([str(r) for r in race_info.rates]) + "\n"
                     print(text, end="", flush=True)
                     f.write(text)
                     f.flush()
@@ -313,6 +316,7 @@ def main(args):
                 print(
                     f"*[{100 * current_time / cap_length_sec:.1f}%] current_time={current_time}s"
                 )
+        cap.release()
 
 
 if __name__ == "__main__":

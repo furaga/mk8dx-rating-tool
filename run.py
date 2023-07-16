@@ -65,8 +65,8 @@ def parse_args():
     parser.add_argument("--video_path", type=Path, default=None)
     parser.add_argument("--out_csv_path", type=Path, required=True)
     parser.add_argument("--imshow", action="store_true")
-    parser.add_argument("--max_my_rate", type=int, default=40000)
-    parser.add_argument("--min_my_rate", type=int, default=30000)
+    parser.add_argument("--max_my_rate", type=int, default=50000)
+    parser.add_argument("--min_my_rate", type=int, default=35000)
     args = parser.parse_args()
     return args
 
@@ -199,7 +199,7 @@ def detect_course(img):
                 best_race_type = k
 
     # save
-    # imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
+  #  imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
     # imwrite_safe(f"data/tmp/race_type/{best_course}_{_cnt:05d}.png", race_type_img)
     _cnt += 1
 
@@ -215,8 +215,6 @@ def detect_rates_after(img):
             crop
         )  # , verbose=True)
         if ret and min_my_rate <= my_rate <= max_my_rate:
-            imwrite_safe(f"rate_{_cnt:05d}.png", crop)
-
             rates_after = []
             for roi in result_rates_rois:
                 crop = crop_img(inv_img, roi)
