@@ -8,29 +8,38 @@ import mk8dx_digit_ocr
 
 from utils import OBS, RaceAnalyzer
 
+DEBUG_MODE = False
+start_time = 480 + 14
 
-race_type_roi = [0.16, 0.85, 0.24, (0.85 + 0.98) / 2]  # 上半分を使用
-course_roi = [0.72, 0.85, 0.84, 0.98]
+corr_x = 0
+corr_y = 0
+# # 【マリオカート8DX】参加型🟡ゲリラ配信！【成瀬_Vtuber】
+# # 【マリオカート8DX】参加型🟡初見さん歓迎！一緒に走ろう🤜🤛卍【成瀬_Vtuber
+# # 【マリオカート8DX】参加型🟣初見さん歓迎！一緒に走ろう【成瀬_Vtuber】 (1)
+# corr_x = - 17 / 1920
 
-race_type_roi = [0.16, 0.85, 0.24, 0.98]
-course_roi = [0.73, 0.87, 0.82, 0.96]
+# 怒りのゲリラ配信💢【成瀬_Vtuber
+# corr_x = - 0 / 1920
+
+
+race_type_roi = [0.16 + corr_x, 0.85, 0.24, 0.98]
+course_roi = [0.73 + corr_x, 0.87, 0.82, 0.96]
 
 players_roi_base = [
-    93 / 1920,
+    93 / 1920 + corr_x,
     84 / 1080,
     1827 / 1920,
     870 / 1080,
 ]
 
-result_rates_rois = [
-    [
-        1120 / 1280,
-        (50 + 52 * i) / 720,
-        1224 / 1280,
-        (95 + 52 * i) / 720,
-    ]
-    for i in range(12)
-]
+# race_type_roi = [0.16 + 0.002, 0.85 + 0.01, 0.24 + 0.0025, 0.98 + 0.01]
+# course_roi = [0.73 + 0.002, 0.87 + 0.01, 0.82 + 0.0025, 0.96 + 0.01]
+# players_roi_base = [
+#     93 / 1920 + 0.002,
+#     84 / 1080 + 0.01,
+#     1827 / 1920 + 0.0025,
+#     870 / 1080 + 0.01,
+# ]
 
 
 class RaceInfo:
@@ -130,6 +139,8 @@ def detect_rates_before(img):
     players_roi = players_roi_base
 
     players_img = crop_img(img, players_roi)
+    if DEBUG_MODE:
+        cv2.imshow(f"players_roi", cv2.resize(players_img, None, fx=0.5, fy=0.5))
 
     players = []
     for x in range(2):
@@ -137,10 +148,13 @@ def detect_rates_before(img):
             players.append(
                 crop_img(players_img, [x / 2, y / 6, (x + 1) / 2, (y + 1) / 6])
             )
-    
+
     rates = []
     for i, p in enumerate(players):
         rate_img = crop_img(p, [0.75, 0.5, 0.995, 0.995])
+        if DEBUG_MODE:
+            cv2.imshow(f"rate_img {i}", rate_img)
+
         rate_img = cv2.cvtColor(rate_img, cv2.COLOR_BGR2GRAY)
         ret, rate = mk8dx_digit_ocr.detect_digit(rate_img)
         if not ret:
@@ -211,6 +225,8 @@ def parse_frame(img, ts, status, race_info):
     is_pre_race = is_pre_race_screen(img)
     if is_pre_race:
         rates = detect_rates_before(img)
+        if DEBUG_MODE:
+            print("RATES", rates)
         # 左半分にレートが写っていれば
         n_valid = len([x for x in rates[:6] if x > 500])
         if n_valid >= 3:
@@ -231,6 +247,7 @@ def main(args):
 
     crop_dict = {}
     with open(args.video_dir / "crop.txt", mode="r", encoding="utf8") as f:
+        # with open("crop.txt", mode="r", encoding="utf8") as f:
         for line in f:
             tokens = line.split(",")
             if len(tokens) != 5:
@@ -245,9 +262,12 @@ def main(args):
         cap = cv2.VideoCapture(str(video_path))
         out_path = args.out_dir / "middle_frames" / f"{video_path.stem}.jpg"
         out_path.parent.mkdir(exist_ok=True, parents=True)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, cap.get(cv2.CAP_PROP_FRAME_COUNT) // 3)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, cap.get(cv2.CAP_PROP_FRAME_COUNT) // 2)
 
         img = cap.read()[1]
+        if img is None:
+            print("INVALID:", video_path)
+            continue
         H, W = img.shape[:2]
         if video_path.stem in crop_dict:
             x1, y1, x2, y2 = crop_dict[video_path.stem]
@@ -255,10 +275,14 @@ def main(args):
 
         imwrite_safe(str(out_path), img)
         cap.release()
-    return 
+    # return
 
     for vi, video_path in enumerate(all_video_path):
         print(f"{vi+1}/{len(all_video_path)}: {video_path}")
+
+        if (args.out_dir / f"{video_path.stem}").exists():
+            print("  skipped")
+            continue
 
         history.clear()
         status = "none"
@@ -266,7 +290,10 @@ def main(args):
         race_info = RaceInfo()
 
         cap = cv2.VideoCapture(str(video_path))
-        current_time = 0
+        current_time = 0  # 23 * 60 # 0
+        if DEBUG_MODE:
+            current_time = start_time
+
         while True:
             cap.set(cv2.CAP_PROP_POS_MSEC, current_time * 1000)
             ret, frame = cap.read()
@@ -278,10 +305,17 @@ def main(args):
                 x1, y1, x2, y2 = crop_dict[video_path.stem]
                 frame = crop_img(frame, (x1 / W, y1 / H, x2 / W, y2 / H))
 
-            cv2.imshow("frame1", frame)
-            cv2.waitKey(1)
+            cv2.imshow("frame1", cv2.resize(frame, None, fx=0.5, fy=0.5))
             status, race_info = parse_frame(frame, 0, status, race_info)
             history[-1].update({"status": status})
+
+            if DEBUG_MODE:
+                cv2.imshow("cource", crop_img(frame, course_roi))
+                cv2.imshow("type", crop_img(frame, race_type_roi))
+                if ord("q") == cv2.waitKey(0):
+                    exit(0)
+            else:
+                cv2.waitKey(1)
 
             if (
                 len(history) >= 3
@@ -318,11 +352,16 @@ def main(args):
                 )
         cap.release()
 
+
 def main_only_with_images(args):
     out_csv_path = "count_mirror_200cc.csv"
     with open(out_csv_path, "w", encoding="utf8") as f:
         all_img_paths = list(args.out_dir.glob("*/*.jpg"))
-        all_img_paths = [img_path for img_path in all_img_paths if img_path.parent.stem != "middle_frames"]
+        all_img_paths = [
+            img_path
+            for img_path in all_img_paths
+            if img_path.parent.stem != "middle_frames"
+        ]
         for i, img_path in enumerate(all_img_paths):
             if i % 100 == 0:
                 print(f"{i+1}/{len(all_img_paths)}: {img_path}")
@@ -333,11 +372,94 @@ def main_only_with_images(args):
             text += course + ","
             text += race_type + ","
             text += ",".join([str(r) for r in rates]) + "\n"
-#            print(text, end="", flush=True)
+            #            print(text, end="", flush=True)
             f.write(text)
             f.flush()
 
 
+def show_classification(args):
+    out_csv_path = "output_wave5/race_info.csv"
+    with open(out_csv_path, "r", encoding="utf8") as f:
+        for line in f:
+            try:
+                tokens = line.split(",")
+                cnt = 0
+                name = ""
+                while "@" not in name:
+                    name += "," + tokens[cnt]
+                    cnt += 1
+                name = name.strip(",")
+                type = tokens[cnt + 1]
+                dname, ts = name.split("@")
+                img_path = f"output_wave5/{dname}/{int(ts):05d}s.jpg"
+                img = imread_safe(img_path)
+                race_type_img = crop_img(img, race_type_roi)
+                course_img = crop_img(img, course_roi)
+                course_img = cv2.resize(
+                    course_img, (race_type_img.shape[1], race_type_img.shape[0])
+                )
+                out_img = cv2.hconcat([race_type_img, course_img])
+                out_img_path = f"output/{type}/{name}.jpg"
+                Path(out_img_path).parent.mkdir(parents=True, exist_ok=True)
+                imwrite_safe(out_img_path, out_img)
+            except Exception as e:
+                print(line)
+                print(e)
+
+
+def summarize(args):
+    race_info_paths = [
+        Path("output_wave5/race_info_part1.csv"),
+        Path("output_wave5/race_info_part2.csv"),
+        Path("output_wave5/race_info_part3.csv"),
+    ]
+    for p in race_info_paths:
+        print("=======" + str(p) + "=======")
+        part = p.stem.split("_")[-1]
+        with open(p, "r", encoding="utf8") as f:
+            for line in f:
+                try:
+                    tokens = line.split(",")
+                    cnt = 0
+                    name = ""
+                    while "@" not in name:
+                        name += "," + tokens[cnt]
+                        cnt += 1
+                    name = name.strip(",")
+                    row = [name] + tokens[cnt:]
+
+                    rates = [int(r) for r in row[3:]]
+                    rates = [int(r) for r in rates if r > 0]
+                    mean_rate = np.mean(rates)
+                    if mean_rate <= 3000:
+                        continue
+
+                    dname, ts = name.split("@")
+
+                    race_type = None
+                    for t in ["150cc", "ミラー", "200cc"]:
+                        #   print(f"output/{part}/{t}/{name}.jpg")
+                        p1 = Path(f"output/{part}/{t}/{name}.jpg")
+                        p2 = Path(f"output/{part}/{t}/{dname}@{int(ts[:-1])}.jpg")
+                        if p1.exists() or p2.exists():
+                            race_type = t
+                            break
+
+                    assert race_type is not None, "NOT FOUND " + (
+                        f"output/{part}/{t}/{name}.jpg"
+                    )
+
+                    if race_type is not None:
+                        row[2] = race_type
+                        with open("count_mirror_200cc.csv", "a", encoding="utf8") as f:
+                            f.write(",".join(row))
+                except Exception as e:
+                    print(line)
+                    print(e)
+
+
 if __name__ == "__main__":
 #    main(parse_args())
-    main_only_with_images(parse_args())
+    #    main_only_with_images(parse_args())
+    # show_classification(parse_args())
+    summarize(parse_args())

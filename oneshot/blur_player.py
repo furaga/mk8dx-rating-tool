@@ -36,22 +36,31 @@
 
 vid_dict = {}
 
-with open("../output_wave5/count_mirror_200cc_edit.csv", "r", encoding="utf8") as f:
-    lines = f.readlines()
-    for line in lines:
-        tokens = line.strip().split(",")
+with open("count_mirror_200cc_pub.csv", "w", encoding="utf8") as fw:
+    with open("count_mirror_200cc.csv", "r", encoding="utf8") as f:
+        lines = f.readlines()
+        for line in lines:
+            tokens = line.split(",")
+            tokens = [t.strip() for t in tokens]
+            cnt = 0
+            name = ""
+            while "@" not in name:
+                name += "," + tokens[cnt]
+                cnt += 1
+            name = name.strip(",")
+            tokens = [name] + tokens[cnt:]
 
-        video_name = tokens[0].split("@")[0]
-        if video_name not in vid_dict:
-            vid_dict[video_name] = f"video{len(vid_dict):02d}"
+            video_name = tokens[0].split("@")[0]
+            if video_name not in vid_dict:
+                vid_dict[video_name] = f"video{len(vid_dict):02d}"
 
-        vid = vid_dict[video_name]
+            vid = vid_dict[video_name]
 
-        row = [vid]
-        if len(tokens) > 20:
-            row += tokens[1:3]
-            row += tokens[5:17]
-        else:
-            row += tokens[1:15]
+            row = [vid]
+            if len(tokens) > 20:
+                row += tokens[1:3]
+                row += tokens[5:17]
+            else:
+                row += tokens[1:15]
 
-        print(','.join(row))
+            fw.write(','.join(row) + "\n")
