@@ -36,6 +36,47 @@ def imwrite_safe(filename, img, params=None):
 import time
 
 
+def plot(xs, ys, n_lap, label, borders):
+    import matplotlib.pyplot as plt
+
+    inds = [i for i, y in enumerate(ys) if not np.isnan(y)]
+    print(f"LAP{n_lap}: {len(inds)}")
+    if n_lap < 3:
+        inds = [i for i, y in enumerate(ys) if 38.2 < y < 42]
+
+    # set canvas size
+    plt.figure(figsize=(20, 10))
+
+    xs = np.take(xs, inds)
+    ys = np.take(ys, inds)
+    plt.plot(xs, ys, label=label)
+
+    for border in borders:
+        y0 = min(ys)
+        y1 = max(ys)
+        plt.plot(
+            [border, border], [y0, y1], color="gray", linestyle="dashed", linewidth=0.5
+        )
+        
+    # save as png
+    plt.savefig(f"output/LAP{n_lap}_RAW.png")
+
+    # moving average
+    ksize = 30
+    move_avg = np.convolve(ys, np.ones(ksize), mode="valid") / ksize
+    plt.plot(xs[-len(move_avg) :], move_avg, label=label + "_MA")
+
+    # moving minimum
+    move_min = np.minimum.accumulate(ys)
+    plt.plot(xs, move_min, label=label + "_MIN")
+
+
+    plt.legend()
+
+    # save as png
+    plt.savefig(f"output/LAP{n_lap}.png")
+
+
 def main(args):
     all_video_paths = list(args.video_dir.glob("*.mp4"))
 
@@ -70,6 +111,9 @@ def main(args):
 
     n_lap = 0
     out_rows = []
+    video_time_offset = 0
+    borders = []
+    borders.append(video_time_offset)
     for vi, vid in enumerate(video_ids):
         csv_path = list(args.out_dir.glob(f"*{vid}.csv"))[0]
         laps_path = f"output/{csv_path.name}"
@@ -79,44 +123,85 @@ def main(args):
         df = pd.read_csv(laps_path)
 
         for row in df.values:
-            _, _, timer = row
-            is_lap0 = "0:00.000" == timer
-            is_lap3 = timer[0] != "0"
-            if is_lap0:
-                out_rows.append([])
+            video_time, _, timer = row
+
+            import datetime
+
+            video_time_dt = datetime.datetime.strptime(
+                video_time, "%H:%M:%S.%f"
+            ) - datetime.datetime.strptime("0:0:0.0", "%H:%M:%S.%f")
+            video_time_sec = video_time_offset + video_time_dt.total_seconds() / 3600
+
+            # parse and convert timer to sec
+
+            dt = datetime.datetime.strptime(timer, "%M:%S.%f")
+            second = dt.minute * 60 + dt.second + dt.microsecond / 1000000
+
+            is_start = second == 0
+            # 一周目39.3以上しか取れてないのでそれより小さい値はおかしい
+            is_not_lap1 = second < 39.3
+            is_finish = second > 60
+
+            if is_start:
+                n_lap = 0
+            elif is_finish:
+                n_lap = 3
             else:
-                if len(out_rows[-1]) > 2 and not is_lap3:
+                n_lap = len(out_rows[-1]) if len(out_rows) > 0 else 0
+                if n_lap >= 3:
                     out_rows.append([])
+                    n_lap = 1
+                if n_lap == 1 and is_not_lap1:
+                    n_lap = 2
 
-                tokens = timer.split(":")
-                ts = (
-                    +float(tokens[0]) * 60
-                    + float(tokens[1].split(".")[0])
-                    + float(tokens[1].split(".")[1]) / 1000
-                )
-                timer_float = ts
+            if n_lap == 0:
+                out_rows.append([])
 
-                if is_lap3:
-                    if len(out_rows[-1]) >= 2:
-                        timer_float += -out_rows[-1][0] - out_rows[-1][1]
+            while len(out_rows[-1]) < n_lap:
+                out_rows[-1].append((float("nan"), float("nan")))
 
-                out_rows[-1].append(timer_float)
-                if len(out_rows[-1]) > 3:
-                    print("ERROR: more than 3 laps")
-                    print(out_rows[-1])
+            out_rows[-1].append((video_time_sec, second))
+
+            assert (
+                len(out_rows[-1]) <= 4
+            ), f"ERROR: more than 4 elements: {out_rows[-1]}"
+
+            if n_lap == 3:
+                out_rows.append([])
+
+        video_time_offset += video_time_dt.total_seconds() / 3600
+        borders.append(video_time_offset)
+
+    def find_valid(vs):
+        for v in vs:
+            if v != float("nan"):
+                return v
+        return float("nan")
 
     out_rows = [
-        row + [float("nan")] * (3 - len(row))
-        for i, row in enumerate(out_rows)
-        if len(row) > 0
+        [find_valid([v[0] for v in row])] + [v[1] for v in row] for row in out_rows
     ]
-    out_rows = [
-        [v if type(v) == str or 37 < v < 45 else float("nan") for v in row]
-        for row in out_rows
-    ]
+
+    # out_rows = [
+    #     row for row in out_rows if len(row) < 3 or max(row[2 : min(4, len(row))]) < 42
+    # ]
+
     print(out_rows[:3])
     out_df = pd.DataFrame(out_rows)
-    out_df.to_csv("output/TA_laps.csv", index=False, header=["lap1", "lap2", "lap3"])
+    out_df.to_csv(
+        "output/TA_laps.csv",
+        index=False,
+        header=["Practice Time", "Start", "LAP1", "LAP2", "FINISH"],
+    )
+
+    print("TOTAL:", len(out_rows))
+
+    for n_lap in range(1, 4):
+        xs = [row[0] for row in out_rows]
+        ys = [
+            row[n_lap + 1] if len(row) > n_lap + 1 else float("nan") for row in out_rows
+        ]
+        plot(xs, ys, n_lap, f"LAP{n_lap}", borders)
 
 
 if __name__ == "__main__":
