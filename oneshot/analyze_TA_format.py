@@ -35,46 +35,67 @@ def imwrite_safe(filename, img, params=None):
 
 import time
 
+fontsize = 32
 
-def plot(xs, ys, n_lap, label, borders):
+
+def plot(xs, ys, n_lap, label, borders, ideal_times):
     import matplotlib.pyplot as plt
 
     inds = [i for i, y in enumerate(ys) if not np.isnan(y)]
-    print(f"LAP{n_lap}: {len(inds)}")
+    print(f"LAP{n_lap}: {len(inds)} ({100 * len(inds) / len(xs)} %)")
     if n_lap < 3:
-        inds = [i for i, y in enumerate(ys) if 38.2 < y < 42]
+        inds = [i for i, y in enumerate(ys) if 37.8 < y < 42]
 
     # set canvas size
     plt.figure(figsize=(20, 10))
+    plt.rcParams["font.size"] = fontsize
+    plt.xlabel("Practice Time [hours]")
+    plt.ylabel("Time [sec]")
 
     xs = np.take(xs, inds)
     ys = np.take(ys, inds)
     plt.plot(xs, ys, label=label)
 
-    for border in borders:
-        y0 = min(ys)
-        y1 = max(ys)
-        plt.plot(
-            [border, border], [y0, y1], color="gray", linestyle="dashed", linewidth=0.5
-        )
-        
-    # save as png
-    plt.savefig(f"output/LAP{n_lap}_RAW.png")
+    # for border in borders:
+    #     y0 = min(ys)
+    #     y1 = max(ys)
+    #     plt.plot(
+    #         [border, border],
+    #         [y0, y1],
+    #         color="gray",
+    #         linestyle="dashed",
+    #         linewidth=0.5,
+    #     )
 
     # moving average
     ksize = 30
     move_avg = np.convolve(ys, np.ones(ksize), mode="valid") / ksize
-    plt.plot(xs[-len(move_avg) :], move_avg, label=label + "_MA")
-
-    # moving minimum
-    move_min = np.minimum.accumulate(ys)
-    plt.plot(xs, move_min, label=label + "_MIN")
-
-
+    plt.plot(xs[-len(move_avg) :], move_avg, label=label + " MA (k=30)")
     plt.legend()
 
     # save as png
+    plt.savefig(f"output/LAP{n_lap}_RAW.png")
+
+    # moving minimum
+    move_min = np.minimum.accumulate(ys)
+    plt.plot(xs, move_min, label=label + " Best")
+
+    # save as png
+    plt.legend()
     plt.savefig(f"output/LAP{n_lap}.png")
+
+    if n_lap == 3:
+        plt.plot(xs, np.take(ideal_times, inds), label="Ideal Time")
+        # save as png
+        plt.legend()
+        plt.savefig(f"output/LAP{n_lap}_IDEAL.png")
+
+    # 更新時期
+    miny = 1e10
+    for x, y in zip(xs, ys):
+        if y < miny:
+            print(f"{x} {y}")
+            miny = y
 
 
 def main(args):
@@ -107,6 +128,25 @@ def main(args):
         "UL25ZswdXEc",
         "9R7wq24QmYE",
         "YzFW_96G3JI",
+        "IJTO0NvjLGMfeature=share",
+        "sdUAxBQoQyQfeature=share",
+        "xL4iRGg0PCofeature=share",
+        "LaQwSTrJlxAfeature=share",
+        "K-m20UB1BTIfeature=share",
+        "C0UNZGT6LFcfeature=share",
+        "6yg_29fm1cYfeature=share",
+        "jir9MdwUGf8feature=share",
+        "gVSuVCh-FV0feature=share",
+        "Sm_pHXNrHzsfeature=share",
+        "zH5L_tRmXnUfeature=share",
+        "wE2lersICoE",
+        "_w5LUqIQI7w",
+        "JpHaGi8Sma4",
+        "ZkZd3RoHoqM",
+        "t0sh0duNUG4",
+        "JtzFkut4n4I",
+        "LA3s-vVYnPc",
+        "OrNyVYKgYJw",
     ]
 
     n_lap = 0
@@ -194,14 +234,43 @@ def main(args):
         header=["Practice Time", "Start", "LAP1", "LAP2", "FINISH"],
     )
 
+    # video_time_offset to HH:MM:SS
+    print(video_time_offset)
+
     print("TOTAL:", len(out_rows))
+
+    min_times = []
+
+    for n_lap in range(1, 4):
+        if n_lap == 3:
+            vs = [
+                row[4] - row[2] - row[3]
+                if len(row) > 4 and not np.any(np.isnan(row[2:5]))
+                else np.inf
+                for row in out_rows
+            ]
+        else:
+            vs = [
+                row[n_lap + 1] if len(row) > n_lap + 1 else float("nan")
+                for row in out_rows
+            ]
+        vs = [v if not np.isnan(v) and 37.8 < v < 42 else np.inf for v in vs]
+        mins = np.minimum.accumulate(vs)
+        #        print(mins)
+        min_times.append(mins)
+
+    print(min_times[0][-1], min_times[1][-1], min_times[2][-1])
+
+    ideal_times = [ts[0] + 2 * min(ts[1:]) for ts in zip(*min_times)]
+
+    print(ideal_times[-1])
 
     for n_lap in range(1, 4):
         xs = [row[0] for row in out_rows]
         ys = [
             row[n_lap + 1] if len(row) > n_lap + 1 else float("nan") for row in out_rows
         ]
-        plot(xs, ys, n_lap, f"LAP{n_lap}", borders)
+        plot(xs, ys, n_lap, f"LAP{n_lap}", borders, ideal_times)
 
 
 if __name__ == "__main__":

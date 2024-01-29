@@ -66,11 +66,34 @@ def main(args):
         "UL25ZswdXEc",
         "9R7wq24QmYE",
         "YzFW_96G3JI",
+        "IJTO0NvjLGMfeature=share",
+        "sdUAxBQoQyQfeature=share",
+        "xL4iRGg0PCofeature=share",
+        "LaQwSTrJlxAfeature=share",
+        "K-m20UB1BTIfeature=share",
+        "C0UNZGT6LFcfeature=share",
+        "6yg_29fm1cYfeature=share",
+        "jir9MdwUGf8feature=share",
+        "gVSuVCh-FV0feature=share",
+        "Sm_pHXNrHzsfeature=share",
+        "zH5L_tRmXnUfeature=share",
+        "wE2lersICoE",
+        "_w5LUqIQI7w",
+        "JpHaGi8Sma4",
+        "ZkZd3RoHoqM",
+        "t0sh0duNUG4",
+        "JtzFkut4n4I",
+        "LA3s-vVYnPc",
+        "OrNyVYKgYJw",
     ]
 
     for vi, vid in enumerate(video_ids):
+        print(vid)
         csv_path = list(args.out_dir.glob(f"*{vid}.csv"))[0]
         video_path = list(args.video_dir.glob(f"*{vid}.mp4"))[0]
+
+        if Path(f"output/{csv_path.name}").exists():
+            continue
 
         with open(f"output/{csv_path.name}", "w") as f:
             pass
@@ -81,7 +104,6 @@ def main(args):
 
         cap = cv2.VideoCapture(str(video_path))
 
-        csv_path = args.out_dir / f"{video_path.stem}.csv"
         import pandas as pd
 
         df = pd.read_csv(csv_path)

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 path = Path(
-    r"C:\Users\furag\Downloads\新コース"
+    r"C:\Users\furag\Documents\prog\python\mk8dx-rating-tool\data\tmp"
 )
 
 
