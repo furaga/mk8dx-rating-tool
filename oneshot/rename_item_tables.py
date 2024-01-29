@@ -81,11 +81,33 @@ names = [
     "DSマリオサーキット",
     "ワルイージスタジアム",
     "シンガポールスプラッシュ",
+
+    # 81
+    "アテネポリス",
+    "デイジークルーザー",
+    "ムーンリッジハイウェイ",
+    "シャボンロード",
+    "ロサンゼルスコースト",
+    "サンセットこうや",
+    "ノコノコみさき",
+    "バンクーバーバレー",
+
+    # 89
+    "ローマアバンティ",
+    "DKマウンテン",
+    "デイジーサーキット",
+    "パックンしんでん",
+    "マドリードグランデ",
+    "ロゼッタプラネット",
+    "クッパじょう３",
+    "Wiiレインボーロード",
 ]
 
 from pathlib import Path
 
 for i, name in enumerate(names):
+    if i < 81:
+        continue
     shutil.copy(f"item_tables/{i + 1:02d}.png", f"renamed/{name}.png")
     for j in range(1, 4):
         if Path(f"item_tables/{i + 1:02d}_{j}.png").exists():
