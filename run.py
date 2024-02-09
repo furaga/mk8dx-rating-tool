@@ -231,12 +231,13 @@ def detect_rates_after(img):
 
 
 def OBS_apply_rate(race_info):
-    OBS.set_text("現在レート・前回順位", f"(現在 {race_info.my_rate:,}, 前回{race_info.place}位)")
+    OBS.set_text("現在レート", f"{race_info.my_rate}")
+    OBS.set_text("前回順位", f"前回 {race_info.place}位")
 
     text = OBS.get_text("最高レート")
     cur_max_rate = int(text.split(" ")[1].replace(",", ""))
     if cur_max_rate < race_info.my_rate:
-        text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate:,}")
+        text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate}")
 
 
 is_item_table_visible = False
