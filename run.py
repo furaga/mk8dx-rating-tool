@@ -237,7 +237,7 @@ def OBS_apply_rate(race_info):
     text = OBS.get_text("最高レート")
     cur_max_rate = int(text.split(" ")[1].replace(",", ""))
     if cur_max_rate < race_info.my_rate:
-        text = OBS.set_text("最高レート", f"最高レート {race_info.my_rate}")
+        text = OBS.set_text("最高レート", f"最高 {race_info.my_rate}")
 
 
 is_item_table_visible = False
