@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 
 names = [
     "マリオカートスタジアム",
@@ -81,7 +82,6 @@ names = [
     "DSマリオサーキット",
     "ワルイージスタジアム",
     "シンガポールスプラッシュ",
-
     # 81
     "アテネポリス",
     "デイジークルーザー",
@@ -91,7 +91,6 @@ names = [
     "サンセットこうや",
     "ノコノコみさき",
     "バンクーバーバレー",
-
     # 89
     "ローマアバンティ",
     "DKマウンテン",
@@ -103,7 +102,6 @@ names = [
     "Wiiレインボーロード",
 ]
 
-from pathlib import Path
 
 for i, name in enumerate(names):
     if i < 81:

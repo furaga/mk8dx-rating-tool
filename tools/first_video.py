@@ -3,10 +3,8 @@
 """
 
 import argparse
-import cv2
 from pathlib import Path
-from typing import NamedTuple, List
-import pandas as pd
+
 import numpy as np
 
 
@@ -41,9 +39,6 @@ def collect_first_place_races(df):
 
 
 def generate_ymmp(tempalte_ymmp, video_path, start_time_str, end_time_str, output_path):
-    cap = cv2.VideoCapture(str(video_path))
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-
     from datetime import datetime
 
     start_time = datetime.strptime(start_time_str, "%H:%M:%S")
@@ -66,7 +61,9 @@ def generate_ymmp(tempalte_ymmp, video_path, start_time_str, end_time_str, outpu
     with open(output_path, "w", encoding="utf8") as f:
         f.write(output)
 
-    print(f"Save first race video. Video time: {end_time - start_time} | {str(output_path)}.")
+    print(
+        f"Save first race video. Video time: {end_time - start_time} | {str(output_path)}."
+    )
 
 
 def main(args):
@@ -94,4 +91,5 @@ def main(args):
 
 
 if __name__ == "__main__":
+    main(parse_args())
     main(parse_args())

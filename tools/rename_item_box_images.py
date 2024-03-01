@@ -72,6 +72,7 @@ all_img_paths = list(Path(r"C:\Users\furag\Videos").glob("*.png"))
 
 offset = 0
 
+
 def imread_safe(filename, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
     try:
         n = np.fromfile(filename, dtype)
@@ -104,7 +105,7 @@ for name in names:
     n = n_boxes.get(name, 3)
     for i in range(n):
         path = all_img_paths[offset + i]
-        new_path = Path(f"data/{name}") /f"{name}_{i}.jpg"
+        new_path = Path(f"data/{name}") / f"{name}_{i}.jpg"
         print(f"Renaming {path} to {new_path}")
         new_path.parent.mkdir(parents=True, exist_ok=True)
         img = imread_safe(str(path))

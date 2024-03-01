@@ -1,7 +1,8 @@
 import argparse
-import cv2
+import time
 from pathlib import Path
-import numpy as np
+
+import cv2
 
 from utils import RaceAnalyzer
 
@@ -33,9 +34,6 @@ def imwrite_safe(filename, img, params=None):
         return False
 
 
-import time
-
-
 def main(args):
     all_video_paths = list(args.video_dir.glob("*.mp4"))
 
@@ -44,12 +42,12 @@ def main(args):
         print("=========================================")
         print(f"[{vi + 1}/{len(all_video_paths)}] {str(video_path)}")
         print("=========================================")
-        
+
         out_path = args.out_dir / f"{video_path.stem}.csv"
         if out_path.exists():
             continue
         with open(out_path, "w", encoding="utf8") as f:
-            f.write(f"VIDEO_TIME_MS,LAP,TIMER\n")
+            f.write("VIDEO_TIME_MS,LAP,TIMER\n")
         cap = cv2.VideoCapture(str(video_path))
 
         ts = 0
@@ -97,4 +95,5 @@ def main(args):
 
 
 if __name__ == "__main__":
+    main(parse_args())
     main(parse_args())

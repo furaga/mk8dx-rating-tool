@@ -1,12 +1,10 @@
 import argparse
-import cv2
 from pathlib import Path
-from typing import NamedTuple, List
-import pandas as pd
-import numpy as np
-import mk8dx_digit_ocr
+from typing import List
 
-from utils import OBS, RaceAnalyzer
+import cv2
+import mk8dx_digit_ocr
+import numpy as np
 
 DEBUG_MODE = False
 start_time = 480 + 14
@@ -140,7 +138,7 @@ def detect_rates_before(img):
 
     players_img = crop_img(img, players_roi)
     if DEBUG_MODE:
-        cv2.imshow(f"players_roi", cv2.resize(players_img, None, fx=0.5, fy=0.5))
+        cv2.imshow("players_roi", cv2.resize(players_img, None, fx=0.5, fy=0.5))
 
     players = []
     for x in range(2):
@@ -241,8 +239,6 @@ def parse_frame(img, ts, status, race_info):
 
 
 def main(args):
-    import time
-
     all_video_path = list(args.video_dir.glob("*.mp4"))
 
     crop_dict = {}
@@ -286,7 +282,6 @@ def main(args):
 
         history.clear()
         status = "none"
-        ts = 0
         race_info = RaceInfo()
 
         cap = cv2.VideoCapture(str(video_path))
@@ -459,7 +454,8 @@ def summarize(args):
 
 
 if __name__ == "__main__":
-#    main(parse_args())
+    #    main(parse_args())
     #    main_only_with_images(parse_args())
     # show_classification(parse_args())
+    summarize(parse_args())
     summarize(parse_args())

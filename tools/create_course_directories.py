@@ -1,6 +1,4 @@
 from pathlib import Path
-import cv2
-import numpy as np
 
 path = Path(
     r"C:\Users\furag\Documents\prog\python\mk8dx_tools\mirror_200cc_analyzer\data\thumbnails_2"

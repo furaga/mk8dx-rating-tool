@@ -1,6 +1,6 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-from matplotlib.widgets import RectangleSelector
-import numpy as np
 
 
 class Annotate(object):
@@ -78,16 +78,15 @@ class Annotate(object):
                 f.write(text)
 
 
-from pathlib import Path
-
 for img_path in list(Path("output_wave5/middle_frames").glob("*.jpg")):
     image = plt.imread(
         img_path
     )  # r"C:\Users\furag\Documents\prog\python\mk8dx-rating-tool\output_wave5\middle_frames\（716②）ぐつぐつハンバーグとビーチ！もう夏だね【マリオカート８DX】【リスナー参加型】【じゃむさん。】-RXRYkmqlzYg.jpg") # Enter your image path
     # image = np.random.rand(300,300)  # Random image for testing, replace this line
     fig, ax = plt.subplots()
-   # fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9)  # Add margins to the figure
+    # fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9)  # Add margins to the figure
     ax.imshow(image)
     print(image.shape)
     annotator = Annotate(img_path.stem, image.shape[1], image.shape[0])
+    plt.show()
     plt.show()

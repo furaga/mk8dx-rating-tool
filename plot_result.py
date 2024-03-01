@@ -1,9 +1,10 @@
+import random
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
 import plotly.graph_objs as go
-import random
+from dash.dependencies import Input, Output
 
 # データを作成
 x = [1, 2, 3, 4]
@@ -26,7 +27,9 @@ app.layout = html.Div(
     [
         dcc.Graph(id="my-graph", figure=go.Figure(data=[initial_trace])),
         dcc.Interval(
-            id="interval-component", interval=5 * 1000, n_intervals=0  # in milliseconds
+            id="interval-component",
+            interval=5 * 1000,
+            n_intervals=0,  # in milliseconds
         ),
     ]
 )
@@ -51,7 +54,6 @@ def update_graph(n_intervals):
     with open("out.csv", "r", encoding="utf8") as f:
         lines = f.readlines()[1:][-show_num:]
         my_rates = [int(line.split(",")[4]) for line in lines]
-        other_rates = [get_avg_rate(line) for line in lines]
         x = [i for i in range(len(my_rates))]
 
         starts = []
@@ -62,12 +64,13 @@ def update_graph(n_intervals):
                 starts.append(i + 1)
 
     updated_trace = go.Scatter(
-        x=x, y=my_rates, mode="lines+markers", name="自分のレート", yaxis="y1",
+        x=x,
+        y=my_rates,
+        mode="lines+markers",
+        name="自分のレート",
+        yaxis="y1",
         line=dict(color="#11ff11", width=2),
         marker=dict(size=4),
-    )
-    updated_trace_median = go.Scatter(
-        x=x, y=other_rates, mode="lines+markers", name="部屋のレート中央値", yaxis="y2"
     )
 
     # グラフに反映させる
@@ -128,4 +131,5 @@ def update_graph(n_intervals):
 
 # アプリケーションを実行
 if __name__ == "__main__":
+    app.run_server(debug=True)
     app.run_server(debug=True)

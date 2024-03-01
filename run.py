@@ -1,13 +1,12 @@
 import argparse
-import cv2
 from pathlib import Path
-from typing import NamedTuple, List
-import pandas as pd
-import numpy as np
+from typing import List
+
+import cv2
 import mk8dx_digit_ocr
+import numpy as np
 
 from utils import OBS, RaceAnalyzer
-
 
 race_type_roi = [0.16, 0.85, 0.24, (0.85 + 0.98) / 2]  # 上半分を使用
 course_roi = [0.72, 0.85, 0.84, 0.98]
@@ -199,7 +198,7 @@ def detect_course(img):
                 best_race_type = k
 
     # save
-  #  imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
+    #  imwrite_safe(f"data/tmp/courses/{best_course}_{_cnt:05d}.png", course_img)
     # imwrite_safe(f"data/tmp/race_type/{best_course}_{_cnt:05d}.png", race_type_img)
     _cnt += 1
 
@@ -208,7 +207,6 @@ def detect_course(img):
 
 def detect_rates_after(img):
     inv_img = 255 - cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    num = 0
     for i, roi in enumerate(result_rates_rois):
         crop = crop_img(inv_img, roi)
         ret, my_rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
@@ -404,7 +402,6 @@ def main(args):
     race_info = RaceInfo()
     import time
 
-    since1 = time.time()
     since = time.time()
     browser_show_time = -10000
     browser_visible = True

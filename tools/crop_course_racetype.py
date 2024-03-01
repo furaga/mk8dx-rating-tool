@@ -2,9 +2,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-path = Path(
-    r"C:\Users\furag\Documents\prog\python\mk8dx-rating-tool\data\tmp"
-)
+path = Path(r"C:\Users\furag\Documents\prog\python\mk8dx-rating-tool\data\tmp")
 
 
 race_type_roi = [0.16, 0.85, 0.24, 0.98]
@@ -19,7 +17,6 @@ def imread_safe(filename, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
     except Exception as e:
         print(e)
         return None
-
 
 
 def imwrite_safe(filename, img, params=None):
@@ -59,6 +56,6 @@ for img_path in path.glob("*.png"):
         continue
     race_type_img = crop_img(img, race_type_roi)
     course_img = crop_img(img, course_roi)
-    #cv2.imwrite(f"race_type/{cnt:05d}.png", race_type_img)
+    # cv2.imwrite(f"race_type/{cnt:05d}.png", race_type_img)
     Path(f"course/{img_path.stem}").mkdir(exist_ok=True, parents=True)
     imwrite_safe(f"course/{img_path.stem}/{cnt:05d}.png", course_img)

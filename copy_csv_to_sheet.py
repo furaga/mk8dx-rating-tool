@@ -1,7 +1,8 @@
-import csv
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 import os
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -21,12 +22,6 @@ def read_csv_file(file_path):
 
 def copy_csv_data_to_google_sheet(sheet_id, sheet_range, data, credentials_file):
     try:
-        from google.auth.transport.requests import Request
-        from google.oauth2.credentials import Credentials
-        from google_auth_oauthlib.flow import InstalledAppFlow
-        from googleapiclient.discovery import build
-        from googleapiclient.errors import HttpError
-
         creds = None
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first

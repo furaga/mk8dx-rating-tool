@@ -10,3 +10,4 @@ google-auth-httplib2
 google-api-python-client
 streamlit 
 streamlit-image-select
+ruff==0.3.0

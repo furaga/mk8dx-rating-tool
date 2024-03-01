@@ -1,7 +1,4 @@
 import cv2
-import pandas as pd
-
-from utils import OBS
 import mk8dx_digit_ocr
 
 
@@ -93,12 +90,17 @@ def detect_timer(img):
         cropped = img[y1:y2, x1:x2]
         # Shear: 上辺をx軸方向に3pxだけずらず
         import numpy as np
-        shear_mat = np.array([[1, 0.1, 0], [0, 1, 0]]).astype(np.float32)
-        cropped = cv2.warpAffine(cropped, shear_mat, (cropped.shape[1], cropped.shape[0])) 
-        # 周囲に10pxマージンをつける。数字が切れている場合に備える
-        cropped = cv2.copyMakeBorder(cropped, 10, 10, 10, 10, cv2.BORDER_REPLICATE, value=(255, 255, 255))
 
-        ret, num = detect_number(cropped, False ) ## cnt == 1)
+        shear_mat = np.array([[1, 0.1, 0], [0, 1, 0]]).astype(np.float32)
+        cropped = cv2.warpAffine(
+            cropped, shear_mat, (cropped.shape[1], cropped.shape[0])
+        )
+        # 周囲に10pxマージンをつける。数字が切れている場合に備える
+        cropped = cv2.copyMakeBorder(
+            cropped, 10, 10, 10, 10, cv2.BORDER_REPLICATE, value=(255, 255, 255)
+        )
+
+        ret, num = detect_number(cropped, False)  ## cnt == 1)
         cv2.imshow(f"img{cnt}", cropped)
         if ret and t_min <= num < t_max:
             timer.append(num)

@@ -63,4 +63,4 @@ with open("count_mirror_200cc_pub.csv", "w", encoding="utf8") as fw:
             else:
                 row += tokens[1:15]
 
-            fw.write(','.join(row) + "\n")
+            fw.write(",".join(row) + "\n")

@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 
 # 動画ファイルの読み込み
 video = cv2.VideoCapture("input_video.mkv")

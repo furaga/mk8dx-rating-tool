@@ -1,9 +1,8 @@
 import argparse
-import cv2
 from pathlib import Path
-import numpy as np
 
-from utils import RaceAnalyzer
+import cv2
+import numpy as np
 
 
 def parse_args():
@@ -32,8 +31,6 @@ def imwrite_safe(filename, img, params=None):
         print(e)
         return False
 
-
-import time
 
 fontsize = 32
 
@@ -99,8 +96,6 @@ def plot(xs, ys, n_lap, label, borders, ideal_times):
 
 
 def main(args):
-    all_video_paths = list(args.video_dir.glob("*.mp4"))
-
     video_ids = [
         "JZSGG7gt0Q4",
         "C4I08_ie3rI",
