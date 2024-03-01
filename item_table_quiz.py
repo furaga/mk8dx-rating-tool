@@ -27,17 +27,21 @@ def get_encoded_images():
 
     images = []
     for path in image_paths:
-        img = imread_safe(str(path))
-        ratio = 80 / img.shape[0]
-        img = cv2.resize(img, (0, 0), fx=ratio, fy=ratio)
-        size = max(img.shape[:2])
-        thumb = np.zeros((size, size, 3), np.uint8)
-        thumb.fill(128)
-        offset_y = (size - img.shape[0]) // 2
-        thumb[offset_y:offset_y + img.shape[0]] = img
-        thumb = thumb[:,:,::-1]
-        images.append(thumb)
+        # img = imread_safe(str(path))
+        # ratio = 80 / img.shape[0]
+        # img = cv2.resize(img, (0, 0), fx=ratio, fy=ratio)
+        # size = max(img.shape[:2])
+        # thumb = np.zeros((size, size, 3), np.uint8)
+        # thumb.fill(128)
+        # offset_y = (size - img.shape[0]) // 2
+        # thumb[offset_y:offset_y + img.shape[0]] = img
+        # thumb = thumb[:,:,::-1]
+        # images.append(thumb)
 
+        with open(path, "rb") as img_file:
+            encoded = base64.b64encode(img_file.read()).decode()
+        img = f"data:image/jpeg;base64, {encoded}"
+        images.append(img)
     return images
 
 with st.sidebar:
@@ -50,28 +54,29 @@ with st.sidebar:
     )
 
 
-# main_image_container = st.empty()
 
-# clicked = clickable_images(
-#     images,
-#     titles=[f"Image #{str(i)}" for i in range(5)],
-#     div_style={"display": "flex", "justify-content": "center", "flex-wrap": "wrap", "max-width": "800px"},
-#     img_style={"margin": "5px", "width": "120px"},
-# )
+index = images.index(img)
+print(f"{index=}")
 
-# st.markdown(f"Image #{clicked} clicked" if clicked > -1 else "No image clicked")
-
-
-# # クリックされた画像があれば、対応する大きい画像を表示
-# if clicked is not None and clicked >= 0:
+if index >= 0:
+    course = constants.COURSE_NAMES[index]
     
-#     clicked_course = constants.COURSE_NAMES[clicked]
+    item_boxes = list(Path(f"data/item_boxes/{course}").glob(f"{course}_*.jpg"))
     
-#     item_box_path = Path("data/item_boxes") / clicked_course / f"{clicked_course}_{0}.jpg"
-#  #   item_box_enc = encode_image(item_box_path)
-    
-# #    item_table_path = Path("data/item_table") / f"{clicked_course}.png"
-#  #   item_table_enc = encode_image(item_table_path)
+    item_box = image_select(
+        label="",
+        images=item_boxes,
+        captions=["" for _ in item_boxes],
+    )
 
-#     image_display_size = 720
-#     main_image_container.image(str(item_box_path), caption=f"Image {clicked + 1}", width=image_display_size)
+    print(item_box)
+
+    st.image(str(item_box), caption=f"")
+
+    name, idx = item_box.stem.split('_')
+    idx = int(idx)
+    item_table = Path(f"data/item_table/{name}.png")
+    if not item_table.exists():
+        item_table = Path(f"data/item_table/{name}_0.png")
+        
+    st.image(str(item_table), caption=f"")
