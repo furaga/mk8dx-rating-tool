@@ -64,8 +64,8 @@ def parse_args():
     parser.add_argument("--video_path", type=Path, default=None)
     parser.add_argument("--out_csv_path", type=Path, required=True)
     parser.add_argument("--imshow", action="store_true")
-    parser.add_argument("--max_my_rate", type=int, default=55000)
-    parser.add_argument("--min_my_rate", type=int, default=45000)
+    parser.add_argument("--max_my_rate", type=int, default=60000)
+    parser.add_argument("--min_my_rate", type=int, default=53000)
     args = parser.parse_args()
     return args
 
@@ -314,16 +314,16 @@ def parse_frame(img, ts, status, race_info):
                 #         False, race_info.course, race_info.race_type, n_lap
                 #     )
             # タイマーオン
-            if len(history) >= 3:
-                if np.all([x["visible_coin_lap"] for x in history[-3:]]):
-                    OBS_show_timer(True)
+            # if len(history) >= 3:
+            #     if np.all([x["visible_coin_lap"] for x in history[-3:]]):
+            #         OBS_show_timer(True)
 
         # 結果表のパース
         ret, my_rate, place, rates_after = detect_rates_after(img)
         if ret:
             if enable_OBS:
                 OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
-                OBS_show_timer(False)
+                # OBS_show_timer(False)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place
@@ -341,7 +341,7 @@ def parse_frame(img, ts, status, race_info):
         if ret:
             if enable_OBS:
                 OBS_show_item_table(False, race_info.course, race_info.race_type, n_lap)
-                OBS_show_timer(False)
+                # OBS_show_timer(False)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
             race_info.place = place

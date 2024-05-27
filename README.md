@@ -1,8 +1,9 @@
 # mk8dx-rating-tool
 
-https://youtu.be/zm2BzvySpUg
+<img src="doc/img0.png" width=500> 
+<img src="doc/img1.png" width=500>
 
-上の動画のようにレート戦におけるコース・種目・現在レートなどを自動解析していい感じに可視化するツールです。
+レート戦におけるコース・種目・現在レートなどを自動解析していい感じに可視化するツールです。
 
 ## Setup
 
