@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import cv2
 import mk8dx_digit_ocr
@@ -40,6 +40,7 @@ class RaceInfo:
         self.rates: List[int] = [0 for _ in range(12)]
         self.rates_after: List[int] = [0 for _ in range(12)]
         self.my_rate: int = 0
+        self.delta_rate: Optional[int] = None
 
     def __repr__(self) -> str:
         return (
@@ -64,8 +65,8 @@ def parse_args():
     parser.add_argument("--video_path", type=Path, default=None)
     parser.add_argument("--out_csv_path", type=Path, required=True)
     parser.add_argument("--imshow", action="store_true")
-    parser.add_argument("--max_my_rate", type=int, default=60000)
-    parser.add_argument("--min_my_rate", type=int, default=53000)
+    parser.add_argument("--max_my_rate", type=int, default=88887)
+    parser.add_argument("--min_my_rate", type=int, default=83000)
     args = parser.parse_args()
     return args
 
@@ -230,7 +231,14 @@ def detect_rates_after(img):
 
 def OBS_apply_rate(race_info):
     OBS.set_text("現在レート", f"{race_info.my_rate}")
-    OBS.set_text("前回順位", f"前回 {race_info.place}位")
+    OBS.set_text("前回順位", f"前回{race_info.place}位")
+
+    if race_info.place <= 3:
+        OBS.set_color("前回順位", (100, 255, 100))
+    elif race_info.place >= 9:
+        OBS.set_color("前回順位", (255, 100, 100))
+    else:
+        OBS.set_color("前回順位", (255, 255, 255))
 
     text = OBS.get_text("最高レート")
     cur_max_rate = int(text.split(" ")[1].replace(",", ""))
@@ -243,6 +251,7 @@ prev_item_table = "", ""
 
 
 def OBS_show_item_table(visible, cource, race_type, n_lap):
+    pass
     global is_item_table_visible, prev_item_table
     if visible:
         path = Path("data/item_table") / f"{cource}_{n_lap}.png"
@@ -255,9 +264,11 @@ def OBS_show_item_table(visible, cource, race_type, n_lap):
             if race_type == "ミラー":
                 img = cv2.flip(img, 1)
             # TODO: no hard coding
-            cv2.imwrite("C:/Users/furag/Documents/doc/OBS/texture/item_table.png", img)
+            cv2.imwrite(
+                "C:/Users/furag/Dropbox/GALLERIA_XF/Documents/doc/OBS/texture/item_table.png",
+                img,
+            )
             prev_item_table = str(path), race_type
-
     if visible != is_item_table_visible:
         is_item_table_visible = visible
         OBS.set_visible("アイテムテーブル", visible)
@@ -273,7 +284,7 @@ def OBS_show_timer(visible):
         OBS.set_visible("timer.mp4", visible)
 
 
-def parse_frame(img, ts, status, race_info):
+def parse_frame(img, ts, status, race_info: RaceInfo):
     history.append({"ts": ts, "status": status, "visible_coin_lap": False})
     while len(history) > 10:
         history.pop(0)
@@ -326,6 +337,10 @@ def parse_frame(img, ts, status, race_info):
                 # OBS_show_timer(False)
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
+            if len(history) >= 2 and "my_rate" in history[-2]:
+                race_info.delta_rate = my_rate - history[-2]["my_rate"]
+            else:
+                race_info.delta_rate = None
             race_info.place = place
             n_valid = len([x for x in rates_after if x > 0])
             prev_n_valid = len([x for x in race_info.rates_after if x > 0])
@@ -375,9 +390,17 @@ def save_race_info(out_csv_path, ts, race_info):
         text += str(race_info.my_rate) + ","
         text += ",".join([str(r) for r in race_info.rates]) + ","
         text += ",".join([str(r) for r in race_info.rates_after]) + "\n"
-        print(text.strip(), flush=True)
         f.write(text)
         f.flush()
+
+    valid_rates = [v for v in race_info.rates if v > 0]
+    mid_rate = np.median(valid_rates)
+    min_rate = np.min(valid_rates)
+    max_rate = np.max(valid_rates)
+    print(
+        f"[{race_info.course} ({race_info.race_type})] Place={race_info.place}, VR={race_info.my_rate}, {len(valid_rates)} players, {mid_rate} ({min_rate}-{max_rate})",
+        flush=True,
+    )
 
 
 min_my_rate, max_my_rate = 0, 100000

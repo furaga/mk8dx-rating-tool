@@ -48,7 +48,7 @@ def get_avg_rate(line):
     Input("interval-component", "n_intervals"),
 )
 def update_graph(n_intervals):
-    show_num = 70
+    show_num = 25
 
     # update_tracesを使用してマーカーカラーを変更
     with open("out.csv", "r", encoding="utf8") as f:
@@ -86,8 +86,8 @@ def update_graph(n_intervals):
     # タイトル
     fig.update_layout(
         title=dict(
-            text="<i>Recent VR",
-            font=dict(size=32, color="white"),
+            text="<i>Versus Rate",
+            font=dict(size=24, color="white"),
             x=0.5,
             y=0.82,
             xanchor="center",
@@ -95,16 +95,34 @@ def update_graph(n_intervals):
     )
     fig.update_layout(
         shapes=[
+            # 縦の区切り線
+            *[
+                dict(
+                    type="line",
+                    x0=x,
+                    x1=x,
+                    y0=0,
+                    y1=1,
+                    yref="paper",
+                    line=dict(
+                        color="#cccccc",
+                        width=1,
+                    ),
+                )
+                for x in starts
+            ],
+            # 水平の参照線
             dict(
                 type="line",
-                x0=x,
-                x1=x,
-                y0=0,
-                y1=1,
-                yref="paper",
-                line=dict(color="#3333ff", width=1),
-            )
-            for x in starts
+                x0=0,
+                x1=len(my_rates) - 1,
+                y0=77777,
+                y1=77777,
+                line=dict(
+                    color="#ff0000",
+                    width=1,
+                ),
+            ),
         ]
     )
     fig.update_xaxes(
@@ -114,6 +132,13 @@ def update_graph(n_intervals):
         showgrid=False,
         zeroline=False,
     )
+
+    # レート値からrangeを計算
+    min_rate = min(my_rates)
+    max_rate = max(my_rates)
+    rate_center = (min_rate + max_rate) / 2  # 中心値
+    range_min = min(min_rate - 10, rate_center - 200)  # 中心から±100
+    range_max = max(max_rate + 10, rate_center + 200)
     fig.update_yaxes(
         showline=True,
         linewidth=3,
@@ -124,6 +149,7 @@ def update_graph(n_intervals):
         showgrid=True,
         gridcolor="#cccccc",
         gridwidth=1,
+        range=[range_min, range_max],
     )
 
     return fig

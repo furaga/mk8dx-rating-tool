@@ -1,8 +1,9 @@
-import obswebsocket
-import numpy as np
-import cv2
-from pathlib import Path
 import os
+from pathlib import Path
+
+import cv2
+import numpy as np
+import obswebsocket
 
 obs_ws_ = None
 
@@ -34,6 +35,16 @@ def set_text(source_name: str, new_text: str):
     obs_ws_.call(
         obswebsocket.requests.SetSourceSettings(
             sourceName=source_name, sourceSettings={"text": new_text}
+        )
+    )
+
+
+def set_color(source_name: str, new_rgb):
+    r, g, b = new_rgb
+    new_color = (b << 16) + (g << 8) + r
+    obs_ws_.call(
+        obswebsocket.requests.SetSourceSettings(
+            sourceName=source_name, sourceSettings={"color": new_color}
         )
     )
 
