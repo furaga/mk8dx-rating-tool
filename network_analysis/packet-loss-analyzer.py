@@ -71,8 +71,9 @@ def analyze_packet_loss(csv_file):
     print(day_hour_pivot)
 
     # Overall statistics
-    total_tests = len(df)
-    total_failures = len(df[df["packet_loss"] > 0])
+    # sum of packet_sent
+    total_tests = df["packets_sent"].sum()
+    total_failures = df["packet_loss"].sum()
     failure_rate = (total_failures / total_tests) * 100
 
     print(f"\nTotal tests: {total_tests}")
@@ -141,7 +142,7 @@ def analyze_packet_loss(csv_file):
             lambda x: day_names[x]
         )
 
-        for _, row in high_loss_times.iterrows():
+        for _, row in list(high_loss_times.iterrows())[-5:]:
             print(
                 f"  {row['timestamp']} ({row['day_name']}) - Loss: {row['packet_loss']}% - Packets: {row['packets_received']}/{row['packets_sent']}"
             )

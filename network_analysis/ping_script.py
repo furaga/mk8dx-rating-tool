@@ -9,7 +9,11 @@ import datetime
 import os
 import subprocess
 import time
+from datetime import timedelta
+from io import StringIO
 from typing import Any, Dict, List
+
+import pandas as pd
 
 
 def run_ping(host: str, count: int) -> Dict[str, Any]:
@@ -184,12 +188,44 @@ def print_result_summary(result: Dict[str, Any]) -> None:
     print("-" * 50)
 
 
+def calculate_recent_average():
+    # CSVデータを文字列として用意
+    with open("ping_results.csv", "r") as file:
+        csv_string = file.read()
+
+    # CSVデータを読み込む
+    df = pd.read_csv(StringIO(csv_string))
+
+    # timestamp列をdatetime型に変換
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+    # 最新のタイムスタンプを取得
+    latest_time = df["timestamp"].max()
+
+    # 10分前の時刻を計算
+    time_threshold = latest_time - timedelta(minutes=10)
+
+    # 直近10分のデータを抽出
+    recent_data = df[df["timestamp"] > time_threshold]
+
+    # packet_lossが0より大きい場合、max_rttを1000に設定
+    recent_data.loc[recent_data["packet_loss"] > 0, "max_rtt"] = 1000
+
+    # 平均を計算
+    average_rtt = recent_data["max_rtt"].mean()
+
+    print(f"Latest timestamp: {latest_time}")
+    print(f"10 minutes before: {time_threshold}")
+    print(f"Number of measurements in last 10 minutes: {len(recent_data)}")
+    print(f"Average max RTT in last 10 minutes: {average_rtt:.2f} ms")
+
+
 def main():
     """メイン関数"""
     # デフォルト設定
     host = "8.8.8.8"  # Googleのパブリックドメインネームサーバー
     interval = 60  # 秒
-    count = 4  # pingの回数
+    count = 50  # pingの回数
     output_file = "ping_results.csv"
 
     # カスタム設定（必要に応じて変更）
@@ -257,10 +293,11 @@ def main():
             print_result_summary(result)
 
             # 定期的に結果を保存（5サイクルごと、またはエラー発生時）
-            if cycles % 5 == 0 or not result["success"]:
-                save_results(results, output_file)
-                results = []  # 保存後にリストをクリア
-                print(f"結果を {output_file} に保存しました")
+            save_results(results, output_file)
+            results = []  # 保存後にリストをクリア
+            print(f"結果を {output_file} に保存しました")
+
+            calculate_recent_average()
 
             # 指定した実行時間に達したかチェック
             if end_time and datetime.datetime.now() >= end_time:
