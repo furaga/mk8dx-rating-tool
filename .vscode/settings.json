@@ -1,9 +1,7 @@
 {
-    "ruff.lint.args": [], // ruff checkに渡す追加のコマンドライン引数。設定ファイル(ruff.tomlなど)より優先される
     "ruff.path": [], // ruffの実行パス
     "ruff.interpreter": [], // pythonの実行パス
     "ruff.importStrategy": "fromEnvironment", // "fromEnvironment": 環境にruffがインストールされている場合は、そちらを使う。 "useBundled": Extension付属のruffを使う。
-    "ruff.lint.run": "onType", // "onType": 入力度にruffを実行。 "onSave":保存時にruffを実行。
     "ruff.enable": true, // ruffを有効にするか否か。
     "ruff.organizeImports": true, // source.organizeImports を実行するのにruffを使用するか否か。
     "ruff.fixAll": true, // source.fixAll を実行するのにruffを使用するか否か。
@@ -13,8 +11,6 @@
     "ruff.codeAction.disableRuleComment": { // # nopa でQuick Fixを無視するか否か。
       "enable": true
     },
-    "ruff.showNotifications": "always", // ruffの通知を表示するか否か。 "off", "onError", "onWarning", "always"
-    "ruff.format.args": [], // ruff formatに渡す追加のコマンドライン引数。 設定ファイル(ruff.tomlなど)より優先される
     "ruff.trace.server": "off",
     "editor.defaultFormatter": "charliermarsh.ruff", // "off", "message", "verbose"
 

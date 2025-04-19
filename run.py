@@ -65,8 +65,8 @@ def parse_args():
     parser.add_argument("--video_path", type=Path, default=None)
     parser.add_argument("--out_csv_path", type=Path, required=True)
     parser.add_argument("--imshow", action="store_true")
-    parser.add_argument("--max_my_rate", type=int, default=88887)
-    parser.add_argument("--min_my_rate", type=int, default=83000)
+    parser.add_argument("--max_my_rate", type=int, default=99999)
+    parser.add_argument("--min_my_rate", type=int, default=94900)
     args = parser.parse_args()
     return args
 
