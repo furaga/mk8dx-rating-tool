@@ -66,7 +66,7 @@ def parse_args():
     parser.add_argument("--out_csv_path", type=Path, required=True)
     parser.add_argument("--imshow", action="store_true")
     parser.add_argument("--max_my_rate", type=int, default=3000)
-    parser.add_argument("--min_my_rate", type=int, default=1000)
+    parser.add_argument("--min_my_rate", type=int, default=1600)
     args = parser.parse_args()
     return args
 
@@ -216,15 +216,20 @@ def detect_course(img, threshold=0.8):
     return best_course, best_race_type
 
 
-def detect_rates_after(img):
+def detect_rates_after(img, race_type):
     inv_img = 255 - cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     for i, roi in enumerate(result_rates_rois):
         crop = crop_img(inv_img, roi)
         cv2.imwrite(f"__tmp__crop_{i}.png", crop)
-        ret, my_rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
-            crop
-        )  # , verbose=True)
-        print(i, ret, my_rate)
+        # レースタイプがパックンVSスパイなら自分の色が反転してる
+        if race_type == "パックンVSスパイ":
+            ret, my_rate = mk8dx_digit_ocr.digit_ocr.detect_black_digit(
+                crop
+            )  # , verbose=True)
+        else:
+            ret, my_rate = mk8dx_digit_ocr.digit_ocr.detect_white_digit(
+                crop
+            )  # , verbose=True)
         if ret and min_my_rate <= my_rate <= max_my_rate:
             rates_after = []
             for roi in result_rates_rois:
@@ -268,7 +273,6 @@ def parse_frame(img, ts, status, race_info: RaceInfo):
             if prev_n_valid <= n_valid:
                 race_info.rates = rates
             course, race_type = detect_course(img)
-            print(course, race_type)
             race_info.course = course
             race_info.race_type = race_type
             if enable_OBS:
@@ -277,7 +281,7 @@ def parse_frame(img, ts, status, race_info: RaceInfo):
 
     if status == "race":
         # 結果表のパース
-        ret, my_rate, place, rates_after = detect_rates_after(img)
+        ret, my_rate, place, rates_after = detect_rates_after(img, race_info.race_type)
         if ret:
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
@@ -287,16 +291,17 @@ def parse_frame(img, ts, status, race_info: RaceInfo):
                 race_info.delta_rate = None
             race_info.place = place
             n_valid = len([x for x in rates_after if x > 0])
-            prev_n_valid = len([x for x in race_info.rates_after if x > 0])
-            if prev_n_valid <= n_valid:
-                race_info.rates_after = rates_after
-            if enable_OBS:
-                OBS_apply_rate(race_info)
-            return "result", race_info
+            if n_valid >= 3:
+                prev_n_valid = len([x for x in race_info.rates_after if x > 0])
+                if prev_n_valid <= n_valid:
+                    race_info.rates_after = rates_after
+                if enable_OBS:
+                    OBS_apply_rate(race_info)
+                return "result", race_info
 
     if status == "result":
         # 結果表のパース
-        ret, my_rate, place, rates_after = detect_rates_after(img)
+        ret, my_rate, place, rates_after = detect_rates_after(img, race_info.race_type)
         if ret:
             history[-1].update({"my_rate": my_rate})
             race_info.my_rate = my_rate
@@ -353,6 +358,8 @@ def main(args):
     min_my_rate = args.min_my_rate
     max_my_rate = args.max_my_rate
 
+    print("BATTLE MODE")
+
     if len(args.obs_pass) > 0:
         print("OBS Mode")
         enable_OBS = True
@@ -373,7 +380,7 @@ def main(args):
     while True:
         if browser_visible and time.time() - browser_show_time > 10:
             if enable_OBS:
-                OBS.set_visible("バトル_ブラウザ_レート遷移", False)
+                OBS.set_visible("ブラウザ_レート遷移", False)
             browser_visible = False
 
         if enable_OBS:
@@ -395,7 +402,7 @@ def main(args):
             if next_status == "none":
                 save_race_info(args.out_csv_path, ts_str, race_info)
                 if enable_OBS:
-                    OBS.set_visible("バトル_ブラウザ_レート遷移", True)
+                    OBS.set_visible("ブラウザ_レート遷移", True)
                 browser_visible = True
                 browser_show_time = time.time()
                 race_info = RaceInfo()
