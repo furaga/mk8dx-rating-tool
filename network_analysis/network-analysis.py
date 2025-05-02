@@ -77,7 +77,7 @@ def analyze_network_data_combined2(csv_string):
     plt.figure(figsize=(12, 6))
 
     # 日付ごとに描画
-    for date in dates:
+    for date in dates[-10:]:
         # その日のデータを抽出
         daily_data = df[df["date"] == date]
 
