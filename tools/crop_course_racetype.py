@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import cv2
 import numpy as np
 
@@ -23,6 +24,8 @@ def imwrite_safe(filename, img, params=None):
     try:
         import os
 
+        Path(filename).parent.mkdir(parents=True, exist_ok=True)
+
         ext = os.path.splitext(filename)[1]
         result, n = cv2.imencode(ext, img, params)
 
@@ -46,7 +49,7 @@ def crop_img(img, roi):
     return img
 
 
-cnt = 20000
+cnt = 30000
 for img_path in path.glob("*.png"):
     if "_frame" in str(img_path):
         continue
@@ -56,6 +59,7 @@ for img_path in path.glob("*.png"):
         continue
     race_type_img = crop_img(img, race_type_roi)
     course_img = crop_img(img, course_roi)
-    # cv2.imwrite(f"race_type/{cnt:05d}.png", race_type_img)
-    Path(f"course/{img_path.stem}").mkdir(exist_ok=True, parents=True)
-    imwrite_safe(f"course/{img_path.stem}/{cnt:05d}.png", course_img)
+
+    race_type, course = img_path.stem.split("_")
+    imwrite_safe(f"data/battle_courses/{course}/{cnt:05d}.png", course_img)
+    imwrite_safe(f"data/battle_race_type/{race_type}/{cnt:05d}.png", race_type_img)
